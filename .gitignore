@@ -9,3 +9,7 @@ dist/
 
 # Local planning artifacts
 plan/
+
+# Local project prompts/specs
+instructions.md
+specs.md
