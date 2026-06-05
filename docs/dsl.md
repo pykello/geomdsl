@@ -1,0 +1,233 @@
+# DSL quick reference
+
+## Program structure
+
+A `.geom` file is a sequence of statements.
+
+```text
+version "0.1"
+
+scene(min=(-2,-2), max=(2,2), grid=true)
+export(format=svg, dpi=300)
+
+style tangent = {color: blue, pattern: dashed}
+
+O = pt(0, 0)
+c = Circle(O, 1)
+
+draw c
+draw marker(O)
+draw label(O, "$O$") @ {offset: vec(0.1, 0.1)}
+```
+
+Comments start with `#`.
+
+## Geometry versus drawing
+
+Assignments create mathematical values but do not draw anything.
+
+```text
+A = pt(0, 0)
+B = pt(1, 1)
+segment = LineSegment(A, B)
+```
+
+Only `draw` statements create visible scene objects.
+
+```text
+draw segment
+draw marker(A)
+draw label(B, "$B$")
+```
+
+## Core values
+
+```text
+Number      1, -2.5, 3.14
+Boolean     true, false
+String      "text", "$x$"
+Point       pt(x, y)
+Vector      vec(x, y)
+Curve       Circle(...), LineSegment(...), ParametricCurve(...)
+Drawable    marker(...), arrow(...), label(...)
+Style       {color: red, weight: 2}
+Scene       produced by evaluation
+```
+
+## Point and vector arithmetic
+
+Valid examples:
+
+```text
+A = pt(1, 2)
+B = pt(4, 6)
+v = B - A
+C = A + v
+M = A + 0.5*v
+```
+
+Invalid examples:
+
+```text
+bad1 = A + B
+bad2 = A * 2
+bad3 = 1 + v
+```
+
+## Expressions
+
+```text
+1 + 2*3
+2^3
+-sin(pi/4)
+A + 0.5*(B - A)
+```
+
+Operator precedence, highest to lowest:
+
+```text
+unary -
+^
+* /
++ -
+```
+
+## Scalar functions
+
+```text
+sin(x)
+cos(x)
+tan(x)
+sqrt(x)
+exp(x)
+log(x)
+abs(x)
+min(a, b)
+max(a, b)
+```
+
+Constants:
+
+```text
+pi
+e
+```
+
+## Vector functions
+
+```text
+dot(u, v)
+cross(u, v)
+norm(v)
+unit(v)
+rotate(v, theta)
+rotate90(v)
+distance(A, B)
+midpoint(A, B)
+```
+
+`unit(vec(0,0))` is an error.
+
+## Curves
+
+```text
+LineSegment(A, B)
+Line(A, v)
+Ray(A, v)
+Circle(C, r)
+Arc(C, r, theta0, theta1)
+ParametricCurve(pt(cos(t), sin(t)), t = 0..2*pi)
+```
+
+Curves are directly drawable:
+
+```text
+draw Circle(pt(0,0), 1)
+```
+
+## Curve calculus
+
+```text
+curve_at(c, t)
+velocity(c, t)
+speed(c, t)
+unit_tangent(c, t)
+normal_left(c, t)
+normal_right(c, t)
+tangent_line(c, t)
+normal_line(c, t)
+```
+
+Current calculus helpers use numerical differentiation.
+
+## Drawables
+
+```text
+marker(P)
+arrow(P, v)
+arrow_between(A, B)
+label(P, "$P$")
+```
+
+## Styles
+
+Named style:
+
+```text
+style axis = {color: black, weight: 1.5}
+draw Line(pt(0,0), vec(1,0)) @ axis
+```
+
+Inline style:
+
+```text
+draw marker(P) @ {color: red, size: 9, z: 10}
+```
+
+Defaults:
+
+```text
+defaults {
+  curve:  {color: black, weight: 1.5, samples: 300}
+  marker: {color: black, size: 5}
+  label:  {color: black, font_size: 12}
+  arrow:  {color: black, weight: 1.5, arrow_size: 12}
+}
+```
+
+Common style fields:
+
+```text
+color, weight, pattern, opacity, visible, size, marker,
+arrow_head, arrow_size, font_size, offset, anchor, z, samples, clip
+```
+
+Rendering order is by `z`, then source order.
+
+## Scene configuration
+
+```text
+scene(
+  min=(-3, -2),
+  max=(6, 5),
+  size=(7, 5),
+  grid=true,
+  grid_step=1,
+  axes=true,
+  aspect=equal,
+  background=white
+)
+```
+
+Defaults:
+
+```text
+min=(-5, -5)
+max=(5, 5)
+size=(6, 6)
+grid=false
+grid_step=1
+axes=false
+aspect=equal
+background=white
+```
