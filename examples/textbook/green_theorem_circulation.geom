@@ -44,10 +44,10 @@ draw marker(P)
 draw arrow(P, 0.55*T) @ circulation
 draw arrow(P, 0.40*N) @ normal_s
 
-draw label(P, "$P$") @ {offset: vec(0.10, -0.31), anchor: left}
+draw label(P, "$P$") @ {offset: vec(0.16, -0.20), anchor: left}
 draw label(P + 0.55*T, "$d\\mathbf{r}$") @ {offset: vec(-0.16, 0.14), color: blue}
 draw label(P + 0.40*N, "$\\mathbf{n}$") @ {offset: vec(0.05, -0.13), color: red, anchor: left}
-draw label(pt(1.65,0.42), "$C$") @ {font_size: 14, anchor: left}
+draw label(pt(1.88,0.12), "$C$") @ {font_size: 14, anchor: left}
 
 draw label(pt(-2.45,1.92), "$\\oint_C \\mathbf{F}\\cdot d\\mathbf{r}$") @ {font_size: 15, anchor: left}
 draw label(pt(-2.45,-1.88), "$\\mathbf{F}=\\langle -y,x\\rangle$") @ {font_size: 12, color: gray, anchor: left}
