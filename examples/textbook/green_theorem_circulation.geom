@@ -2,46 +2,53 @@
 # https://openstax.org/books/calculus-volume-3/pages/6-4-greens-theorem
 # Original DSL diagram: positively oriented boundary C with a swirling vector field F = <-y, x>.
 
-scene(min=(-3.2,-2.4), max=(3.4,2.6), size=(7,5), grid=true, grid_step=1, axes=true)
+scene(min=(-2.85,-2.15), max=(2.95,2.25), size=(7,5.2), grid=true, grid_step=0.5, axes=true)
 
-style boundary = {color: black, weight: 2.1, samples: 420, z: 6}
-style field_s = {color: gray, weight: 0.9, arrow_size: 7, z: 2}
-style tangent_s = {color: blue, weight: 2, arrow_size: 12, z: 9}
-style normal_s = {color: red, weight: 1.4, pattern: dashed, arrow_size: 10, z: 8}
-style point_s = {color: black, size: 24, z: 10}
-style label_s = {color: black, font_size: 12, z: 20}
+defaults {
+  curve:  {color: black, weight: 2.0, samples: 420}
+  marker: {color: black, size: 28, z: 12}
+  arrow:  {weight: 1.6, arrow_size: 11, z: 8}
+  label:  {font_size: 13, z: 20}
+}
 
-C = ParametricCurve(pt(1.75*cos(t) + 0.32*cos(3*t), 1.08*sin(t) + 0.22*sin(2*t)), t = 0..2*pi)
+style boundary = {color: black, weight: 2.3, samples: 520, z: 8}
+style field_s = {color: gray, weight: 1.1, arrow_size: 9, opacity: 0.9, z: 2}
+style circulation = {color: blue, weight: 2.2, arrow_size: 14, z: 12}
+style normal_s = {color: red, weight: 1.8, arrow_size: 12, z: 11}
+style label_s = {color: black, font_size: 13, z: 20}
+
+C = ParametricCurve(pt(1.55*cos(t) + 0.30*cos(3*t), 0.96*sin(t) + 0.18*sin(2*t)), t = 0..2*pi)
 
 draw C @ boundary
 
-# Rotational vector field samples around the region.
-draw arrow(pt(-2.2,-1.2), 0.24*vec(1.2,-2.2)) @ field_s
-draw arrow(pt(-1.1,-1.2), 0.24*vec(1.2,-1.1)) @ field_s
-draw arrow(pt(0,-1.2), 0.24*vec(1.2,0)) @ field_s
-draw arrow(pt(1.1,-1.2), 0.24*vec(1.2,1.1)) @ field_s
-draw arrow(pt(2.2,-1.2), 0.24*vec(1.2,2.2)) @ field_s
+# Swirling vector field samples around the boundary, kept outside the main region.
+draw arrow(pt(-2.15,1.25), 0.24*vec(-1.25,-2.15)) @ field_s
+draw arrow(pt(-1.20,1.35), 0.24*vec(-1.35,-1.20)) @ field_s
+draw arrow(pt(0.35,1.55), 0.24*vec(-1.55,0.35)) @ field_s
+draw arrow(pt(1.75,1.25), 0.24*vec(-1.25,1.75)) @ field_s
 
-draw arrow(pt(-2.2,0), 0.24*vec(0,-2.2)) @ field_s
-draw arrow(pt(-1.1,0), 0.24*vec(0,-1.1)) @ field_s
-draw arrow(pt(1.1,0), 0.24*vec(0,1.1)) @ field_s
-draw arrow(pt(2.2,0), 0.24*vec(0,2.2)) @ field_s
+draw arrow(pt(-2.20,-1.05), 0.24*vec(1.05,-2.20)) @ field_s
+draw arrow(pt(-1.05,-1.40), 0.24*vec(1.40,-1.05)) @ field_s
+draw arrow(pt(0.50,-1.52), 0.24*vec(1.52,0.50)) @ field_s
+draw arrow(pt(1.95,-1.05), 0.24*vec(1.05,1.95)) @ field_s
 
-draw arrow(pt(-2.2,1.2), 0.24*vec(-1.2,-2.2)) @ field_s
-draw arrow(pt(-1.1,1.2), 0.24*vec(-1.2,-1.1)) @ field_s
-draw arrow(pt(0,1.2), 0.24*vec(-1.2,0)) @ field_s
-draw arrow(pt(1.1,1.2), 0.24*vec(-1.2,1.1)) @ field_s
-draw arrow(pt(2.2,1.2), 0.24*vec(-1.2,2.2)) @ field_s
+draw arrow(pt(2.22,0.10), 0.22*vec(-0.10,2.22)) @ field_s
+draw arrow(pt(-2.22,0.08), 0.22*vec(-0.08,-2.22)) @ field_s
 
-P = curve_at(C, 0.72)
-T = unit_tangent(C, 0.72)
-N = normal_left(C, 0.72)
+# Highlight one boundary point with tangent direction and outward normal.
+P = curve_at(C, 0.68)
+T = unit_tangent(C, 0.68)
+N = normal_left(C, 0.68)
 
-draw marker(P) @ point_s
-draw arrow(P, 0.60*T) @ tangent_s
-draw arrow(P, 0.42*N) @ normal_s
-draw label(P, "$C$") @ {offset: vec(0.15, -0.22)}
-draw label(P + 0.60*T, "$d\\mathbf{r}$") @ {offset: vec(0.08, 0.08), color: blue}
-draw label(P + 0.42*N, "$\\mathbf{n}$") @ {offset: vec(0.06, 0.08), color: red}
-draw label(pt(-2.65, 2.18), "$\\oint_C \\mathbf{F}\\cdot d\\mathbf{r}$") @ label_s
-draw label(pt(-2.62, -2.05), "$\\mathbf{F}=\\langle -y,x\\rangle$") @ {font_size: 11, color: gray, z: 20}
+draw marker(P)
+draw arrow(P, 0.55*T) @ circulation
+draw arrow(P, 0.40*N) @ normal_s
+
+draw label(P, "$P$") @ {offset: vec(0.10, -0.31), anchor: left}
+draw label(P + 0.55*T, "$d\\mathbf{r}$") @ {offset: vec(-0.16, 0.14), color: blue}
+draw label(P + 0.40*N, "$\\mathbf{n}$") @ {offset: vec(0.05, -0.13), color: red, anchor: left}
+draw label(pt(1.65,0.42), "$C$") @ {font_size: 14, anchor: left}
+
+draw label(pt(-2.45,1.92), "$\\oint_C \\mathbf{F}\\cdot d\\mathbf{r}$") @ {font_size: 15, anchor: left}
+draw label(pt(-2.45,-1.88), "$\\mathbf{F}=\\langle -y,x\\rangle$") @ {font_size: 12, color: gray, anchor: left}
+draw label(pt(-0.58,-1.88), "positive orientation") @ {font_size: 11, color: blue, anchor: left}
