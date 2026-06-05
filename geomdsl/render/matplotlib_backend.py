@@ -21,6 +21,7 @@ def render_scene(scene: Scene, *, output: str | None = None, fmt: str | None = N
     ax.set_xlim(scene.min.x, scene.max.x)
     ax.set_ylim(scene.min.y, scene.max.y)
     ax.set_aspect(scene.aspect)
+    ax.set_axisbelow(True)
 
     if scene.grid:
         ax.grid(True, **line_kwargs(scene.grid_style))
@@ -36,8 +37,12 @@ def render_scene(scene: Scene, *, output: str | None = None, fmt: str | None = N
 
     if scene.axes:
         kw = line_kwargs(scene.axis_style)
-        ax.axhline(0, **kw)
-        ax.axvline(0, **kw)
+        ax.axhline(0, **kw, zorder=-1)
+        ax.axvline(0, **kw, zorder=-1)
+
+    for spine in ax.spines.values():
+        spine.set_linewidth(0.8)
+        spine.set_color("#4a4f55")
 
     for drawable in scene.sorted_drawables():
         if drawable.style.get("visible", True) is False:

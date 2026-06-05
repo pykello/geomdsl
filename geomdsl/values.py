@@ -71,9 +71,9 @@ class Scene:
     size: tuple[float, float] = (6.0, 6.0)
     grid: bool = False
     grid_step: float = 1.0
-    grid_style: Style = field(default_factory=Style)
+    grid_style: Style = field(default_factory=lambda: Style({"color": "#d8dde3", "weight": 0.55, "pattern": "dotted", "opacity": 0.9}))
     axes: bool = False
-    axis_style: Style = field(default_factory=Style)
+    axis_style: Style = field(default_factory=lambda: Style({"color": "#8f969e", "weight": 0.9, "pattern": "solid", "opacity": 1.0}))
     aspect: str = "equal"
     background: str = "white"
     padding: float = 0.0
