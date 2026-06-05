@@ -90,8 +90,20 @@ O = pt(0,0)
 draw Circle(O, 1)
 ```
 
+## Textbook-inspired examples
+
+The `examples/textbook/` directory contains original diagrams inspired by OpenStax, LibreTexts, and MIT OpenCourseWare topics:
+
+```bash
+python3 -m geomdsl.cli examples/textbook/green_theorem_circulation.geom -o /tmp/green_theorem.svg
+python3 -m geomdsl.cli examples/textbook/gradient_level_curves.geom -o /tmp/gradient_levels.svg
+python3 -m geomdsl.cli examples/textbook/linear_transformation_grid.geom -o /tmp/linear_grid.svg
+python3 -m geomdsl.cli examples/textbook/eigenvectors_invariant_directions.geom -o /tmp/eigenvectors.svg
+```
+
 ## Documentation
 
+- [Examples guide](docs/examples.md)
 - [CLI guide](docs/cli.md)
 - [DSL quick reference](docs/dsl.md)
 - [Python API guide](docs/python-api.md)
