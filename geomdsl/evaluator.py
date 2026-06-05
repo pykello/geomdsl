@@ -1,0 +1,465 @@
+from __future__ import annotations
+
+import math
+from typing import Any
+
+from . import ast as astmod
+from .ast import (
+    Assignment,
+    BinaryExpr,
+    BooleanExpr,
+    CallExpr,
+    DefaultsStmt,
+    DrawStmt,
+    ExportStmt,
+    Expr,
+    IndexExpr,
+    InlineStyle,
+    NumberExpr,
+    ParamRange,
+    Program,
+    SceneStmt,
+    StringExpr,
+    StyleExpr,
+    StyleRef,
+    StyleStmt,
+    TupleExpr,
+    UnaryExpr,
+    VarExpr,
+)
+from .errors import GeomNameError, GeomTypeError, GeomValueError
+from .parser import parse
+from .values import Arc, Circle, Curve, Drawable, ExportConfig, Line, LineSegment, ParametricCurve, Point, Ray, Scene, Style, Vector
+
+
+_IDENTIFIER_STRINGS = {
+    "black", "white", "red", "blue", "green", "gray", "solid", "dashed", "dotted",
+    "dot", "circle", "cross", "none", "center", "left", "right", "top", "bottom",
+    "top-left", "top-right", "bottom-left", "bottom-right", "viewport", "equal", "auto",
+    "svg", "png", "pdf",
+}
+
+
+class Evaluator:
+    def __init__(self):
+        self.scene = Scene()
+        self.env: dict[str, Any] = {"pi": math.pi, "e": math.e}
+        self.styles: dict[str, Style] = {}
+
+    def eval_program(self, program: Program) -> Scene:
+        for stmt in program.statements:
+            self.eval_stmt(stmt)
+        return self.scene
+
+    def eval_stmt(self, stmt: astmod.Statement) -> None:
+        if isinstance(stmt, Assignment):
+            self.env[stmt.name] = self.eval_expr(stmt.expr)
+            return
+        if isinstance(stmt, SceneStmt):
+            self.apply_scene(stmt)
+            return
+        if isinstance(stmt, ExportStmt):
+            self.apply_export(stmt)
+            return
+        if isinstance(stmt, DefaultsStmt):
+            for key, style_expr in stmt.entries.items():
+                self.scene.defaults[key] = self.eval_style(style_expr)
+            return
+        if isinstance(stmt, StyleStmt):
+            self.styles[stmt.name] = self.eval_style(stmt.style)
+            return
+        if isinstance(stmt, DrawStmt):
+            self.eval_draw(stmt)
+            return
+        if isinstance(stmt, astmod.VersionStmt):
+            return
+        raise GeomValueError(f"Unsupported statement {stmt.__class__.__name__}.", stmt.span.line, stmt.span.column)
+
+    def eval_expr(self, expr: Expr, env: dict[str, Any] | None = None) -> Any:
+        old_env = self.env
+        if env is not None:
+            self.env = env
+        try:
+            return self._eval_expr(expr)
+        finally:
+            self.env = old_env
+
+    def _eval_expr(self, expr: Expr) -> Any:
+        if isinstance(expr, NumberExpr):
+            return expr.value
+        if isinstance(expr, StringExpr):
+            return expr.value
+        if isinstance(expr, BooleanExpr):
+            return expr.value
+        if isinstance(expr, TupleExpr):
+            return tuple(self._eval_expr(x) for x in expr.items)
+        if isinstance(expr, VarExpr):
+            if expr.name in self.env:
+                return self.env[expr.name]
+            raise GeomNameError(f"Unknown name '{expr.name}'.", expr.span.line, expr.span.column)
+        if isinstance(expr, UnaryExpr):
+            value = self._eval_expr(expr.expr)
+            if expr.op == "-" and is_number(value):
+                return -value
+            if expr.op == "-" and isinstance(value, Vector):
+                return Vector(-value.x, -value.y)
+            raise GeomTypeError(f"Cannot apply unary {expr.op} to {type_name(value)}.", expr.span.line, expr.span.column)
+        if isinstance(expr, BinaryExpr):
+            return self.eval_binary(expr)
+        if isinstance(expr, CallExpr):
+            return self.eval_call(expr)
+        if isinstance(expr, IndexExpr):
+            target = self._eval_expr(expr.target)
+            index = self._eval_expr(expr.index)
+            if not isinstance(target, list) or not is_number(index):
+                raise GeomTypeError("Indexing expects List and Number index.", expr.span.line, expr.span.column)
+            return target[int(index)]
+        raise GeomValueError(f"Unsupported expression {expr.__class__.__name__}.", expr.span.line, expr.span.column)
+
+    def eval_binary(self, expr: BinaryExpr) -> Any:
+        left = self._eval_expr(expr.left)
+        right = self._eval_expr(expr.right)
+        op = expr.op
+        if is_number(left) and is_number(right):
+            if op == "+":
+                return left + right
+            if op == "-":
+                return left - right
+            if op == "*":
+                return left * right
+            if op == "/":
+                return left / right
+            if op == "^":
+                return left ** right
+        if isinstance(left, Point) and isinstance(right, Vector):
+            if op == "+":
+                return Point(left.x + right.x, left.y + right.y)
+            if op == "-":
+                return Point(left.x - right.x, left.y - right.y)
+        if isinstance(left, Point) and isinstance(right, Point) and op == "-":
+            return Vector(left.x - right.x, left.y - right.y)
+        if isinstance(left, Vector) and isinstance(right, Vector):
+            if op == "+":
+                return Vector(left.x + right.x, left.y + right.y)
+            if op == "-":
+                return Vector(left.x - right.x, left.y - right.y)
+        if is_number(left) and isinstance(right, Vector) and op == "*":
+            return Vector(left * right.x, left * right.y)
+        if isinstance(left, Vector) and is_number(right):
+            if op == "*":
+                return Vector(left.x * right, left.y * right)
+            if op == "/":
+                return Vector(left.x / right, left.y / right)
+        raise GeomTypeError(f"Cannot {op_name(op)} {type_name(left)} and {type_name(right)}.", expr.span.line, expr.span.column)
+
+    def eval_call(self, expr: CallExpr) -> Any:
+        name = expr.name
+        if name == "ParametricCurve":
+            if len(expr.args) != 2 or not isinstance(expr.args[1], ParamRange) or isinstance(expr.args[0], ParamRange):
+                raise GeomTypeError("ParametricCurve(PointExpr, t = start..end) expected.", expr.span.line, expr.span.column)
+            pr = expr.args[1]
+            start = self.eval_number(pr.start)
+            end = self.eval_number(pr.end)
+            return ParametricCurve(expr.args[0], pr.name, start, end, dict(self.env))
+        args = [self.eval_param_arg(a) for a in expr.args]
+        return self.call_builtin(name, args, expr)
+
+    def eval_param_arg(self, arg: Expr | ParamRange) -> Any:
+        if isinstance(arg, ParamRange):
+            raise GeomTypeError("Parameter ranges are only valid in ParametricCurve.", arg.span.line, arg.span.column)
+        return self._eval_expr(arg)
+
+    def call_builtin(self, name: str, args: list[Any], expr: CallExpr) -> Any:
+        if name == "pt":
+            require_len(name, args, 2, expr)
+            return Point(require_number(args[0], expr), require_number(args[1], expr))
+        if name == "vec":
+            require_len(name, args, 2, expr)
+            return Vector(require_number(args[0], expr), require_number(args[1], expr))
+        if name in {"sin", "cos", "tan", "sqrt", "exp", "log", "abs"}:
+            require_len(name, args, 1, expr)
+            value = require_number(args[0], expr)
+            return getattr(math, name)(value) if name != "abs" else abs(value)
+        if name in {"min", "max"}:
+            require_len(name, args, 2, expr)
+            a = require_number(args[0], expr)
+            b = require_number(args[1], expr)
+            return min(a, b) if name == "min" else max(a, b)
+        if name == "dot":
+            u, v = require_vectors(name, args, expr)
+            return u.x * v.x + u.y * v.y
+        if name == "cross":
+            u, v = require_vectors(name, args, expr)
+            return u.x * v.y - u.y * v.x
+        if name == "norm":
+            require_len(name, args, 1, expr)
+            v = require_vector(args[0], expr)
+            return math.sqrt(v.x * v.x + v.y * v.y)
+        if name == "unit":
+            require_len(name, args, 1, expr)
+            v = require_vector(args[0], expr)
+            n = math.sqrt(v.x * v.x + v.y * v.y)
+            if n == 0:
+                raise GeomValueError("unit(vec(0, 0)) is undefined.", expr.span.line, expr.span.column)
+            return Vector(v.x / n, v.y / n)
+        if name == "rotate":
+            require_len(name, args, 2, expr)
+            v = require_vector(args[0], expr)
+            theta = require_number(args[1], expr)
+            return Vector(v.x * math.cos(theta) - v.y * math.sin(theta), v.x * math.sin(theta) + v.y * math.cos(theta))
+        if name == "rotate90":
+            require_len(name, args, 1, expr)
+            v = require_vector(args[0], expr)
+            return Vector(-v.y, v.x)
+        if name == "distance":
+            a, b = require_points(name, args, expr)
+            return math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2)
+        if name == "midpoint":
+            a, b = require_points(name, args, expr)
+            return Point(a.x + 0.5 * (b.x - a.x), a.y + 0.5 * (b.y - a.y))
+        if name == "LineSegment":
+            a, b = require_points(name, args, expr)
+            return LineSegment(a, b)
+        if name == "Line":
+            require_len(name, args, 2, expr)
+            return Line(require_point(args[0], expr), require_vector(args[1], expr))
+        if name == "Ray":
+            require_len(name, args, 2, expr)
+            return Ray(require_point(args[0], expr), require_vector(args[1], expr))
+        if name == "Circle":
+            require_len(name, args, 2, expr)
+            return Circle(require_point(args[0], expr), require_number(args[1], expr))
+        if name == "Arc":
+            require_len(name, args, 4, expr)
+            return Arc(require_point(args[0], expr), require_number(args[1], expr), require_number(args[2], expr), require_number(args[3], expr))
+        if name == "curve_at":
+            require_len(name, args, 2, expr)
+            return curve_point(require_curve(args[0], expr), require_number(args[1], expr), self, expr)
+        if name == "velocity":
+            require_len(name, args, 2, expr)
+            return velocity(require_curve(args[0], expr), require_number(args[1], expr), self, expr)
+        if name == "speed":
+            require_len(name, args, 2, expr)
+            v = velocity(require_curve(args[0], expr), require_number(args[1], expr), self, expr)
+            return math.sqrt(v.x * v.x + v.y * v.y)
+        if name == "unit_tangent":
+            require_len(name, args, 2, expr)
+            return unit_vector(velocity(require_curve(args[0], expr), require_number(args[1], expr), self, expr), expr)
+        if name == "normal_left":
+            require_len(name, args, 2, expr)
+            t = unit_vector(velocity(require_curve(args[0], expr), require_number(args[1], expr), self, expr), expr)
+            return Vector(-t.y, t.x)
+        if name == "normal_right":
+            require_len(name, args, 2, expr)
+            n = self.call_builtin("normal_left", args, expr)
+            return Vector(-n.x, -n.y)
+        if name == "tangent_line":
+            require_len(name, args, 2, expr)
+            c = require_curve(args[0], expr)
+            t = require_number(args[1], expr)
+            return Line(curve_point(c, t, self, expr), velocity(c, t, self, expr))
+        if name == "normal_line":
+            require_len(name, args, 2, expr)
+            c = require_curve(args[0], expr)
+            t = require_number(args[1], expr)
+            n = self.call_builtin("normal_left", args, expr)
+            return Line(curve_point(c, t, self, expr), n)
+        if name == "marker":
+            require_len(name, args, 1, expr)
+            return Drawable("marker", {"point": require_point(args[0], expr)})
+        if name == "arrow":
+            require_len(name, args, 2, expr)
+            return Drawable("arrow", {"start": require_point(args[0], expr), "vector": require_vector(args[1], expr)})
+        if name == "arrow_between":
+            a, b = require_points(name, args, expr)
+            return Drawable("arrow", {"start": a, "vector": Vector(b.x - a.x, b.y - a.y)})
+        if name == "label":
+            require_len(name, args, 2, expr)
+            if not isinstance(args[1], str):
+                raise GeomTypeError("label(Point, String) expected.", expr.span.line, expr.span.column)
+            return Drawable("label", {"point": require_point(args[0], expr), "text": args[1]})
+        raise GeomNameError(f"Unknown function '{name}'.", expr.span.line, expr.span.column)
+
+    def eval_draw(self, stmt: DrawStmt) -> None:
+        value = self.eval_expr(stmt.expr)
+        style = self.eval_style(stmt.style) if stmt.style else None
+        if isinstance(value, Curve):
+            drawable = Drawable("curve", {"curve": value})
+        elif isinstance(value, Drawable):
+            drawable = value
+        else:
+            raise GeomTypeError(f"draw expected Curve or Drawable, got {type_name(value)}.", stmt.span.line, stmt.span.column)
+        drawable.style = self.scene.default_style_for(drawable.kind).merged(drawable.style).merged(style)
+        self.scene.append(drawable)
+
+    def eval_style(self, style_expr: StyleExpr | None) -> Style:
+        if style_expr is None:
+            return Style()
+        if isinstance(style_expr, StyleRef):
+            if style_expr.name in self.styles:
+                return self.styles[style_expr.name]
+            raise GeomNameError(f"Unknown style '{style_expr.name}'.", style_expr.span.line, style_expr.span.column)
+        if isinstance(style_expr, InlineStyle):
+            return Style({k: self.eval_style_value(k, v) for k, v in style_expr.fields.items()})
+        raise GeomTypeError("Invalid style expression.", style_expr.span.line, style_expr.span.column)
+
+    def eval_style_value(self, field: str, expr: Expr) -> Any:
+        if isinstance(expr, VarExpr) and expr.name not in self.env:
+            return expr.name
+        value = self.eval_expr(expr)
+        if field in {"weight", "opacity", "size", "arrow_size", "font_size", "z", "samples"}:
+            return require_number(value, expr)
+        if field in {"visible", "arrow_head"} and not isinstance(value, bool):
+            raise GeomTypeError(f"Style field '{field}' expects Boolean.", expr.span.line, expr.span.column)
+        if field == "offset" and not isinstance(value, Vector):
+            raise GeomTypeError("Style field 'offset' expects Vector.", expr.span.line, expr.span.column)
+        return value
+
+    def apply_scene(self, stmt: SceneStmt) -> None:
+        for key, expr in stmt.args.items():
+            if key in {"min", "max"}:
+                setattr(self.scene, key, tuple_point(self.eval_expr(expr), expr))
+            elif key == "size":
+                self.scene.size = tuple_pair(self.eval_expr(expr), expr)
+            elif key in {"grid", "axes"}:
+                value = self.eval_expr(expr)
+                if not isinstance(value, bool):
+                    raise GeomTypeError(f"scene {key} expects Boolean.", expr.span.line, expr.span.column)
+                setattr(self.scene, key, value)
+            elif key in {"grid_step", "padding"}:
+                setattr(self.scene, key, self.eval_number(expr))
+            elif key in {"aspect", "background"}:
+                setattr(self.scene, key, self.eval_identifier_or_value(expr))
+            elif key in {"grid_style", "axis_style"}:
+                setattr(self.scene, key, self.eval_style_value_or_ref(expr))
+            else:
+                raise GeomValueError(f"Unknown scene field '{key}'.", expr.span.line, expr.span.column)
+
+    def apply_export(self, stmt: ExportStmt) -> None:
+        data = self.scene.export
+        for key, expr in stmt.args.items():
+            if key == "format":
+                data.format = self.eval_identifier_or_value(expr)
+            elif key == "dpi":
+                data.dpi = int(self.eval_number(expr))
+            elif key == "transparent":
+                value = self.eval_expr(expr)
+                if not isinstance(value, bool):
+                    raise GeomTypeError("export transparent expects Boolean.", expr.span.line, expr.span.column)
+                data.transparent = value
+            else:
+                raise GeomValueError(f"Unknown export field '{key}'.", expr.span.line, expr.span.column)
+
+    def eval_identifier_or_value(self, expr: Expr) -> Any:
+        if isinstance(expr, VarExpr) and expr.name not in self.env:
+            return expr.name
+        return self.eval_expr(expr)
+
+    def eval_style_value_or_ref(self, expr: Expr) -> Style:
+        if isinstance(expr, VarExpr):
+            if expr.name in self.styles:
+                return self.styles[expr.name]
+            if expr.name in self.env and isinstance(self.env[expr.name], Style):
+                return self.env[expr.name]
+        value = self.eval_expr(expr)
+        if isinstance(value, Style):
+            return value
+        raise GeomTypeError("Expected style value.", expr.span.line, expr.span.column)
+
+    def eval_number(self, expr: Expr) -> float:
+        return require_number(self.eval_expr(expr), expr)
+
+
+def evaluate(source: str) -> Scene:
+    return Evaluator().eval_program(parse(source))
+
+
+def curve_point(curve: Curve, t: float, evaluator: Evaluator, expr: CallExpr) -> Point:
+    try:
+        return curve.point_at(t, evaluator)
+    except GeomValueError:
+        raise
+    except Exception as exc:
+        raise GeomValueError(str(exc), expr.span.line, expr.span.column) from exc
+
+
+def velocity(curve: Curve, t: float, evaluator: Evaluator, expr: CallExpr) -> Vector:
+    h = 1e-5
+    p1 = curve_point(curve, t + h, evaluator, expr)
+    p0 = curve_point(curve, t - h, evaluator, expr)
+    return Vector((p1.x - p0.x) / (2.0 * h), (p1.y - p0.y) / (2.0 * h))
+
+
+def unit_vector(v: Vector, expr: CallExpr) -> Vector:
+    n = math.sqrt(v.x * v.x + v.y * v.y)
+    if n == 0:
+        raise GeomValueError("unit tangent is undefined for zero velocity.", expr.span.line, expr.span.column)
+    return Vector(v.x / n, v.y / n)
+
+
+def is_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def type_name(value: Any) -> str:
+    if is_number(value):
+        return "Number"
+    if isinstance(value, bool):
+        return "Boolean"
+    if isinstance(value, str):
+        return "String"
+    return value.__class__.__name__
+
+
+def op_name(op: str) -> str:
+    return {"+": "add", "-": "subtract", "*": "multiply", "/": "divide", "^": "exponentiate"}.get(op, op)
+
+
+def require_len(name: str, args: list[Any], n: int, expr: CallExpr) -> None:
+    if len(args) != n:
+        raise GeomTypeError(f"{name} expected {n} arguments, got {len(args)}.", expr.span.line, expr.span.column)
+
+
+def require_number(value: Any, expr: Expr) -> float:
+    if not is_number(value):
+        raise GeomTypeError(f"Expected Number, got {type_name(value)}.", expr.span.line, expr.span.column)
+    return float(value)
+
+
+def require_point(value: Any, expr: Expr) -> Point:
+    if not isinstance(value, Point):
+        raise GeomTypeError(f"Expected Point, got {type_name(value)}.", expr.span.line, expr.span.column)
+    return value
+
+
+def require_vector(value: Any, expr: Expr) -> Vector:
+    if not isinstance(value, Vector):
+        raise GeomTypeError(f"Expected Vector, got {type_name(value)}.", expr.span.line, expr.span.column)
+    return value
+
+
+def require_curve(value: Any, expr: Expr) -> Curve:
+    if not isinstance(value, Curve):
+        raise GeomTypeError(f"Expected Curve, got {type_name(value)}.", expr.span.line, expr.span.column)
+    return value
+
+
+def require_points(name: str, args: list[Any], expr: CallExpr) -> tuple[Point, Point]:
+    require_len(name, args, 2, expr)
+    return require_point(args[0], expr), require_point(args[1], expr)
+
+
+def require_vectors(name: str, args: list[Any], expr: CallExpr) -> tuple[Vector, Vector]:
+    require_len(name, args, 2, expr)
+    return require_vector(args[0], expr), require_vector(args[1], expr)
+
+
+def tuple_pair(value: Any, expr: Expr) -> tuple[float, float]:
+    if not isinstance(value, tuple) or len(value) != 2:
+        raise GeomTypeError("Expected tuple pair.", expr.span.line, expr.span.column)
+    return require_number(value[0], expr), require_number(value[1], expr)
+
+
+def tuple_point(value: Any, expr: Expr) -> Point:
+    x, y = tuple_pair(value, expr)
+    return Point(x, y)
