@@ -10,4 +10,4 @@ draw c
 draw marker(P)
 draw arrow(P, 0.5*T) @ {color: blue}
 draw arrow(P, 0.5*N) @ {color: red}
-draw label(P, "$P$") @ {offset: vec(0.1, 0.1)}
+draw label(P, "$\\mathbf{P}$") @ {offset: vec(0.1, 0.1)}
