@@ -104,6 +104,29 @@ class Curve:
 
 
 @dataclass
+class PolygonCurve(Curve):
+    points: list[Point]
+    kind: str = "polygon"
+
+    def domain(self) -> tuple[float, float]:
+        return (0.0, float(len(self.points)))
+
+    def point_at(self, t: float, evaluator: Any = None) -> Point:
+        if not self.points:
+            raise ValueError("PolygonCurve requires at least one point")
+        n = len(self.points)
+        if t >= n:
+            return self.points[0]
+        if t <= 0:
+            return self.points[0]
+        i = int(t)
+        frac = t - i
+        a = self.points[i % n]
+        b = self.points[(i + 1) % n]
+        return Point(a.x + frac * (b.x - a.x), a.y + frac * (b.y - a.y))
+
+
+@dataclass
 class LineSegment(Curve):
     a: Point
     b: Point

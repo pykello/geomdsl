@@ -32,6 +32,20 @@ def test_fill_rejects_open_curve():
         raise AssertionError("expected GeomTypeError")
 
 
+def test_fill_polygon_constructor():
+    scene = evaluate("draw fill(polygon(pt(0,0), pt(1,0), pt(0,1))) @ {color: blue, opacity: 0.3}")
+    fill = scene.drawables[0]
+    assert fill.kind == "fill"
+    assert fill.data["curve"].kind == "polygon"
+    assert fill.style.get("color") == "blue"
+
+
+def test_quad_constructor_draws_outline():
+    scene = evaluate("draw quad(pt(0,0), pt(1,0), pt(1,1), pt(0,1))")
+    assert scene.drawables[0].kind == "curve"
+    assert scene.drawables[0].data["curve"].kind == "polygon"
+
+
 def test_fill_curve_exports_svg(tmp_path):
     out = tmp_path / "filled.svg"
     render(FILL_SOURCE, output=str(out))

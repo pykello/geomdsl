@@ -29,7 +29,7 @@ from .ast import (
 )
 from .errors import GeomNameError, GeomTypeError, GeomValueError
 from .parser import parse
-from .values import Arc, Circle, Curve, Drawable, ExportConfig, Line, LineSegment, ParametricCurve, Point, Ray, Scene, Style, Vector
+from .values import Arc, Circle, Curve, Drawable, ExportConfig, Line, LineSegment, ParametricCurve, Point, PolygonCurve, Ray, Scene, Style, Vector
 
 
 _IDENTIFIER_STRINGS = {
@@ -220,6 +220,13 @@ class Evaluator:
         if name == "LineSegment":
             a, b = require_points(name, args, expr)
             return LineSegment(a, b)
+        if name == "polygon":
+            if len(args) < 3:
+                raise GeomTypeError("polygon(Point, Point, Point, ...) expected at least 3 points.", expr.span.line, expr.span.column)
+            return PolygonCurve([require_point(arg, expr) for arg in args])
+        if name == "quad":
+            require_len(name, args, 4, expr)
+            return PolygonCurve([require_point(arg, expr) for arg in args])
         if name == "Line":
             require_len(name, args, 2, expr)
             return Line(require_point(args[0], expr), require_vector(args[1], expr))
@@ -450,6 +457,8 @@ def require_curve(value: Any, expr: Expr) -> Curve:
 def require_fillable_curve(value: Any, expr: Expr, evaluator: Evaluator) -> Curve:
     curve = require_curve(value, expr)
     if isinstance(curve, Circle):
+        return curve
+    if isinstance(curve, PolygonCurve):
         return curve
     if isinstance(curve, Arc) and abs(abs(curve.theta1 - curve.theta0) - 2.0 * math.pi) < 1e-9:
         return curve
