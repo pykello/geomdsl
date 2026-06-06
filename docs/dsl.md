@@ -140,9 +140,13 @@ P = midpoint(A, B)
 L2 = parallel(L, P)
 N = perpendicular(L, P)
 B = perpendicular_bisector(A, B)
+
+c1 = circle_through(A, B)
+c2 = circle_with_diameter(A, B)
 ```
 
 `line_through(A, A)` and zero-length line-like directions are errors.
+The circle construction helpers require distinct defining points.
 
 ## Curves
 

@@ -256,6 +256,19 @@ class Evaluator:
         if name == "Circle":
             require_len(name, args, 2, expr)
             return Circle(require_point(args[0], expr), require_number(args[1], expr))
+        if name == "circle_through":
+            c, p = require_points(name, args, expr)
+            r = distance_between(c, p)
+            if r < 1e-12:
+                raise GeomValueError("circle_through requires distinct points.", expr.span.line, expr.span.column)
+            return Circle(c, r)
+        if name == "circle_with_diameter":
+            a, b = require_points(name, args, expr)
+            r = 0.5 * distance_between(a, b)
+            if r < 1e-12:
+                raise GeomValueError("circle_with_diameter requires distinct points.", expr.span.line, expr.span.column)
+            center = Point(a.x + 0.5 * (b.x - a.x), a.y + 0.5 * (b.y - a.y))
+            return Circle(center, r)
         if name == "Arc":
             require_len(name, args, 4, expr)
             return Arc(require_point(args[0], expr), require_number(args[1], expr), require_number(args[2], expr), require_number(args[3], expr))
@@ -428,6 +441,10 @@ def unit_vector(v: Vector, expr: CallExpr) -> Vector:
     if n == 0:
         raise GeomValueError("unit tangent is undefined for zero velocity.", expr.span.line, expr.span.column)
     return Vector(v.x / n, v.y / n)
+
+
+def distance_between(a: Point, b: Point) -> float:
+    return math.hypot(b.x - a.x, b.y - a.y)
 
 
 def is_number(value: Any) -> bool:

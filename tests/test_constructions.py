@@ -47,3 +47,26 @@ def test_parallel_expects_line_like_curve():
         assert "line-like" in str(exc)
     else:
         raise AssertionError("expected GeomTypeError")
+
+
+def test_circle_construction_helpers():
+    env = env_for("""
+A = pt(0, 0)
+B = pt(3, 4)
+c1 = circle_through(A, B)
+c2 = circle_with_diameter(A, B)
+""")
+    assert env["c1"].center.x == 0
+    assert env["c1"].radius == 5
+    assert env["c2"].center.x == 1.5
+    assert env["c2"].center.y == 2
+    assert env["c2"].radius == 2.5
+
+
+def test_circle_through_rejects_duplicate_points():
+    try:
+        env_for("c = circle_through(pt(0,0), pt(0,0))")
+    except GeomValueError as exc:
+        assert "distinct points" in str(exc)
+    else:
+        raise AssertionError("expected GeomValueError")
