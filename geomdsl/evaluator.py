@@ -133,9 +133,11 @@ class Evaluator:
             if op == "*":
                 return left * right
             if op == "/":
+                if right == 0:
+                    raise GeomValueError("Division by zero is undefined.", expr.span.line, expr.span.column)
                 return left / right
             if op == "^":
-                return left ** right
+                return safe_power(left, right, expr)
         if isinstance(left, Point) and isinstance(right, Vector):
             if op == "+":
                 return Point(left.x + right.x, left.y + right.y)
@@ -154,6 +156,8 @@ class Evaluator:
             if op == "*":
                 return Vector(left.x * right, left.y * right)
             if op == "/":
+                if right == 0:
+                    raise GeomValueError("Division by zero is undefined.", expr.span.line, expr.span.column)
                 return Vector(left.x / right, left.y / right)
         raise GeomTypeError(f"Cannot {op_name(op)} {type_name(left)} and {type_name(right)}.", expr.span.line, expr.span.column)
 
@@ -184,7 +188,7 @@ class Evaluator:
         if name in {"sin", "cos", "tan", "sqrt", "exp", "log", "abs"}:
             require_len(name, args, 1, expr)
             value = require_number(args[0], expr)
-            return getattr(math, name)(value) if name != "abs" else abs(value)
+            return safe_math_call(name, value, expr)
         if name in {"min", "max"}:
             require_len(name, args, 2, expr)
             a = require_number(args[0], expr)
@@ -480,6 +484,26 @@ def unit_vector(v: Vector, expr: CallExpr) -> Vector:
 
 def distance_between(a: Point, b: Point) -> float:
     return math.hypot(b.x - a.x, b.y - a.y)
+
+
+def safe_power(left: float, right: float, expr: Expr) -> float:
+    try:
+        result = left ** right
+    except (OverflowError, ValueError, ZeroDivisionError) as exc:
+        raise GeomValueError("Exponentiation is undefined for these values.", expr.span.line, expr.span.column) from exc
+    if not is_number(result):
+        raise GeomValueError("Exponentiation result is not a real number.", expr.span.line, expr.span.column)
+    return float(result)
+
+
+def safe_math_call(name: str, value: float, expr: Expr) -> float:
+    try:
+        result = abs(value) if name == "abs" else getattr(math, name)(value)
+    except (OverflowError, ValueError, ZeroDivisionError) as exc:
+        raise GeomValueError(f"{name} is undefined for this value.", expr.span.line, expr.span.column) from exc
+    if not is_number(result):
+        raise GeomValueError(f"{name} result is not a real number.", expr.span.line, expr.span.column)
+    return float(result)
 
 
 def is_number(value: Any) -> bool:
