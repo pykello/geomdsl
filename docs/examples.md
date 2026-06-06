@@ -16,6 +16,7 @@ python3 -m geomdsl.cli examples/filled_cube.geom -o /tmp/filled_cube.svg
 
 These examples use construction helpers such as `circle_through`,
 `intersections`, `topmost`, `perpendicular`, and `intersect`.
+They share construction styles through `examples/common/construction_styles.geom`.
 
 ```bash
 python3 -m geomdsl.cli examples/constructions/equilateral_triangle.geom -o /tmp/equilateral_triangle.svg

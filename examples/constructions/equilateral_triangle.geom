@@ -1,14 +1,8 @@
 scene(min=(-0.7,-0.55), max=(2.7,2.15), size=(6.4,4.8), grid=false, axes=false)
 
-defaults {
-  curve: {color: "#1f2933", weight: 1.7, z: 10}
-  marker: {color: "#111827", size: 22, z: 20}
-  label: {font_size: 13, z: 30}
-}
+include "../common/construction_styles.geom"
 
-style compass = {color: "#7a8691", weight: 1.1, pattern: dashed, z: 2}
 style face = {color: "#f9d976", opacity: 0.36, z: 1}
-style edge = {color: "#1f2933", weight: 2.0, z: 10}
 
 A = pt(0, 0)
 B = pt(2, 0)

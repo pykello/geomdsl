@@ -4,6 +4,7 @@ from pathlib import Path
 
 from .errors import GeomError, GeomNameError, GeomParseError, GeomRenderError, GeomTypeError, GeomValueError
 from .evaluator import evaluate
+from .loader import load_file, load_program
 from .parser import parse
 from .render import render_scene
 
@@ -15,19 +16,21 @@ __all__ = [
     "GeomTypeError",
     "GeomValueError",
     "evaluate",
+    "load_file",
+    "load_program",
     "parse",
     "render",
     "render_file",
 ]
 
 
-def render(source: str, *, output: str | None = None, fmt: str | None = None, dpi: int | None = None, backend: str = "matplotlib"):
+def render(source: str, *, output: str | None = None, fmt: str | None = None, dpi: int | None = None, backend: str = "matplotlib", base_path: str | Path | None = None):
     if backend != "matplotlib":
         raise GeomRenderError(f"Unknown backend '{backend}'.")
-    scene = evaluate(source)
+    scene = evaluate(source, base_path=base_path)
     return render_scene(scene, output=output, fmt=fmt, dpi=dpi)
 
 
 def render_file(path: str, *, output: str | None = None, fmt: str | None = None, dpi: int | None = None, backend: str = "matplotlib"):
     source = Path(path).read_text(encoding="utf-8")
-    return render(source, output=output, fmt=fmt, dpi=dpi, backend=backend)
+    return render(source, output=output, fmt=fmt, dpi=dpi, backend=backend, base_path=path)

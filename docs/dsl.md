@@ -22,6 +22,31 @@ draw label(O, "$O$") @ {offset: vec(0.1, 0.1)}
 
 Comments start with `#`.
 
+## Includes
+
+Use `include` to share common styles, defaults, and construction
+definitions across files.
+
+```text
+include "../common/construction_styles.geom"
+
+A = pt(0, 0)
+B = pt(2, 0)
+draw LineSegment(A, B) @ edge
+```
+
+Include paths are relative to the file that contains the include. The
+included file is evaluated before the remaining statements in the
+current file, using the same namespace for variables, styles, defaults,
+scene settings, and export settings.
+
+Cycles are errors. Raw source strings with includes must be evaluated
+with a base path:
+
+```python
+evaluate(source, base_path="examples/constructions/main.geom")
+```
+
 ## Geometry versus drawing
 
 Assignments create mathematical values but do not draw anything.

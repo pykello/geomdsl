@@ -7,6 +7,7 @@ from pathlib import Path
 from . import evaluate, render_file
 from .ast import as_plain
 from .errors import GeomError
+from .loader import load_program
 from .parser import dumps_ast, parse
 
 
@@ -25,18 +26,19 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        source = Path(args.input).read_text(encoding="utf-8")
+        input_path = Path(args.input)
+        source = input_path.read_text(encoding="utf-8")
         if args.dump_ast:
-            print(dumps_ast(parse(source)))
+            print(dumps_ast(load_program(source, base_path=input_path)))
             return 0
         if args.dump_scene:
-            print(as_plain(evaluate(source)))
+            print(as_plain(evaluate(source, base_path=input_path)))
             return 0
         if args.show:
             from matplotlib import pyplot as plt
             from . import render
 
-            render(source, fmt=args.fmt, dpi=args.dpi)
+            render(source, fmt=args.fmt, dpi=args.dpi, base_path=input_path)
             plt.show()
             return 0
         if not args.output:

@@ -3,7 +3,7 @@
 Import the public API from `geomdsl`:
 
 ```python
-from geomdsl import parse, evaluate, render, render_file
+from geomdsl import parse, load_program, load_file, evaluate, render, render_file
 ```
 
 ## Parse source
@@ -29,6 +29,13 @@ draw Circle(pt(0,0), 1)
 
 `evaluate` returns a backend-independent `Scene` and raises `GeomError` subclasses for normal DSL mistakes.
 
+For source strings that use `include`, pass the path that should anchor
+relative include resolution:
+
+```python
+scene = evaluate(source, base_path="examples/constructions/main.geom")
+```
+
 ## Render source
 
 ```python
@@ -44,6 +51,7 @@ render("draw marker(pt(0,0))", output="/tmp/point.svg")
 ```
 
 When `output` is provided, `render` saves the image and returns the output path.
+`render` also accepts `base_path` for source strings that use includes.
 
 ## Render a file
 
@@ -58,7 +66,11 @@ render_file("examples/circle_tangent.geom", output="/tmp/circle.png", dpi=300)
 ```python
 parse(source: str) -> Program
 
-evaluate(source: str) -> Scene
+load_program(source: str, *, base_path: str | Path | None = None) -> Program
+
+load_file(path: str | Path) -> Program
+
+evaluate(source: str, *, base_path: str | Path | None = None) -> Scene
 
 render(
     source: str,
@@ -67,6 +79,7 @@ render(
     fmt: str | None = None,
     dpi: int | None = None,
     backend: str = "matplotlib",
+    base_path: str | Path | None = None,
 )
 
 render_file(

@@ -31,6 +31,11 @@ class VersionStmt(Statement):
 
 
 @dataclass
+class IncludeStmt(Statement):
+    path: str
+
+
+@dataclass
 class SceneStmt(Statement):
     args: dict[str, Expr]
 

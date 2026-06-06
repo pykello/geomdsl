@@ -12,6 +12,7 @@ from .ast import (
     DrawStmt,
     ExportStmt,
     Expr,
+    IncludeStmt,
     IndexExpr,
     InlineStyle,
     NumberExpr,
@@ -187,6 +188,9 @@ class Parser:
         if token.value == "version":
             version = self.expect("STRING", "Expected version string after 'version'.")
             return VersionStmt(token.span, version.value)
+        if token.value == "include":
+            path = self.expect("STRING", "Expected path string after 'include'.")
+            return IncludeStmt(token.span, path.value)
         if token.value == "scene":
             return SceneStmt(token.span, self.named_call_args())
         if token.value == "export":

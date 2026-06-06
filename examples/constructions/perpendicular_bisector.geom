@@ -1,14 +1,6 @@
 scene(min=(-2.3,-2.05), max=(2.3,2.08), size=(6.2,5.0), grid=false, axes=false)
 
-defaults {
-  curve: {color: "#1f2933", weight: 1.6, z: 10}
-  marker: {color: "#111827", size: 20, z: 20}
-  label: {font_size: 13, z: 30}
-}
-
-style compass = {color: "#7a8691", weight: 1.1, pattern: dashed, z: 2}
-style base = {color: "#1f2933", weight: 2.0, z: 10}
-style construction = {color: blue, weight: 1.8, z: 12}
+include "../common/construction_styles.geom"
 
 A = pt(-1, 0)
 B = pt(1, 0)
@@ -23,7 +15,7 @@ bis = line_through(U, D)
 
 draw cA @ compass
 draw cB @ compass
-draw LineSegment(A, B) @ base
+draw LineSegment(A, B) @ edge
 draw bis @ construction
 
 draw marker(A)

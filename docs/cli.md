@@ -26,6 +26,15 @@ The export format is inferred from the output extension unless `--format` is pro
 python3 -m geomdsl.cli examples/circle_tangent.geom -o /tmp/circle.out --format svg
 ```
 
+Input files may use file-relative includes:
+
+```text
+include "../common/construction_styles.geom"
+```
+
+CLI render, `--show`, `--dump-ast`, and `--dump-scene` all expand
+includes relative to the input file.
+
 ## Options
 
 ```text

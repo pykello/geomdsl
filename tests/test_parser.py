@@ -2,7 +2,7 @@ import pytest
 
 from geomdsl.errors import GeomParseError
 from geomdsl.parser import parse
-from geomdsl.ast import Assignment, DrawStmt
+from geomdsl.ast import Assignment, DrawStmt, IncludeStmt
 
 
 def test_parse_assignment_and_draw():
@@ -14,3 +14,9 @@ def test_parse_assignment_and_draw():
 def test_parse_invalid_call_reports_error():
     with pytest.raises(GeomParseError):
         parse("A = pt(1,)")
+
+
+def test_parse_include_statement():
+    program = parse('include "common/styles.geom"\ndraw marker(pt(0,0))')
+    assert isinstance(program.statements[0], IncludeStmt)
+    assert program.statements[0].path == "common/styles.geom"

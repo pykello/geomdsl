@@ -28,7 +28,7 @@ from .ast import (
     VarExpr,
 )
 from .errors import GeomNameError, GeomTypeError, GeomValueError
-from .parser import parse
+from .loader import load_program
 from .values import Arc, Circle, Curve, Drawable, ExportConfig, Line, LineSegment, ParametricCurve, Point, PolygonCurve, Ray, Scene, Style, Vector
 
 
@@ -446,8 +446,8 @@ class Evaluator:
         return require_number(self.eval_expr(expr), expr)
 
 
-def evaluate(source: str) -> Scene:
-    return Evaluator().eval_program(parse(source))
+def evaluate(source: str, *, base_path: str | None = None) -> Scene:
+    return Evaluator().eval_program(load_program(source, base_path=base_path))
 
 
 def curve_point(curve: Curve, t: float, evaluator: Evaluator, expr: CallExpr) -> Point:
