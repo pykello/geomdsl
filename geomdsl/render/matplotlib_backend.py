@@ -158,26 +158,33 @@ def sample_curve(curve: Curve, scene: Scene, samples: int) -> list[Point]:
 
 
 def clip_line(p: Point, v: Vector, scene: Scene, *, ray: bool) -> list[Point]:
-    ts: list[float] = []
-    if v.x != 0:
-        ts.extend([(scene.min.x - p.x) / v.x, (scene.max.x - p.x) / v.x])
-    if v.y != 0:
-        ts.extend([(scene.min.y - p.y) / v.y, (scene.max.y - p.y) / v.y])
-    candidates = []
-    for t in ts:
-        if ray and t < 0:
+    t_min = 0.0 if ray else -math.inf
+    t_max = math.inf
+    eps = 1e-12
+
+    for origin, direction, low, high in (
+        (p.x, v.x, scene.min.x, scene.max.x),
+        (p.y, v.y, scene.min.y, scene.max.y),
+    ):
+        if abs(direction) < eps:
+            if origin < low - eps or origin > high + eps:
+                return []
             continue
-        q = Point(p.x + t * v.x, p.y + t * v.y)
-        if scene.min.x - 1e-9 <= q.x <= scene.max.x + 1e-9 and scene.min.y - 1e-9 <= q.y <= scene.max.y + 1e-9:
-            candidates.append((t, q))
-    candidates = sorted(candidates, key=lambda item: item[0])
-    if ray:
-        candidates.insert(0, (0.0, p))
-    unique: list[Point] = []
-    for _, q in candidates:
-        if not unique or abs(unique[-1].x - q.x) > 1e-9 or abs(unique[-1].y - q.y) > 1e-9:
-            unique.append(q)
-    return unique[:2] if len(unique) >= 2 else unique
+        a = (low - origin) / direction
+        b = (high - origin) / direction
+        enter = min(a, b)
+        exit = max(a, b)
+        t_min = max(t_min, enter)
+        t_max = min(t_max, exit)
+
+    if t_min > t_max + eps or not math.isfinite(t_min) or not math.isfinite(t_max):
+        return []
+
+    start = Point(p.x + t_min * v.x, p.y + t_min * v.y)
+    end = Point(p.x + t_max * v.x, p.y + t_max * v.y)
+    if abs(start.x - end.x) < 1e-9 and abs(start.y - end.y) < 1e-9:
+        return [start]
+    return [start, end]
 
 
 def line_kwargs(style: Style) -> dict[str, Any]:
