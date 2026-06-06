@@ -373,6 +373,15 @@ class Evaluator:
             if not isinstance(args[1], str):
                 raise GeomTypeError("label(Point, String) expected.", expr.span.line, expr.span.column)
             return Drawable("label", {"point": require_point(args[0], expr), "text": args[1]})
+        if name == "point_label":
+            require_len(name, args, 2, expr)
+            if not isinstance(args[1], str):
+                raise GeomTypeError("point_label(Point, String) expected.", expr.span.line, expr.span.column)
+            return Drawable(
+                "label",
+                {"point": require_point(args[0], expr), "text": args[1]},
+                Style({"offset": Vector(0.12, 0.12), "anchor": "bottom-left"}),
+            )
         if name == "fill":
             require_len(name, args, 1, expr)
             return Drawable("fill", {"curve": require_fillable_curve(args[0], expr, self)})

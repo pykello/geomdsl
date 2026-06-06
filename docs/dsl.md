@@ -249,7 +249,12 @@ marker(P)
 arrow(P, v)
 arrow_between(A, B)
 label(P, "$P$")
+point_label(P, "$P$")
 ```
+
+`point_label(P, text)` is a label with a small default offset and
+bottom-left anchor for common point annotations. Inline style can still
+override the offset or anchor.
 
 
 ## Filled regions

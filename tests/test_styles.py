@@ -33,6 +33,21 @@ def test_inline_label_offset():
     assert scene.drawables[0].style.get("offset") == Vector(0.1, 0.2)
 
 
+def test_point_label_uses_default_readable_offset():
+    scene = evaluate('P = pt(1,2)\ndraw point_label(P, "$P$")')
+    label = scene.drawables[0]
+    assert label.kind == "label"
+    assert label.data["point"].x == 1
+    assert label.data["text"] == "$P$"
+    assert label.style.get("offset") == Vector(0.12, 0.12)
+    assert label.style.get("anchor") == "bottom-left"
+
+
+def test_point_label_offset_can_be_overridden():
+    scene = evaluate('P = pt(1,2)\ndraw point_label(P, "$P$") @ {offset: vec(-0.1, 0)}')
+    assert scene.drawables[0].style.get("offset") == Vector(-0.1, 0)
+
+
 def test_invalid_style_enum_is_rejected():
     try:
         evaluate("draw LineSegment(pt(0,0), pt(1,1)) @ {pattern: dahsed}")
