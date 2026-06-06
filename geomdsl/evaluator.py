@@ -315,7 +315,9 @@ class Evaluator:
 
     def eval_style_value(self, field: str, expr: Expr) -> Any:
         if isinstance(expr, VarExpr) and expr.name not in self.env:
-            return expr.name
+            value = expr.name
+            validate_style_enum(field, value, expr)
+            return value
         value = self.eval_expr(expr)
         if field in {"weight", "opacity", "size", "arrow_size", "font_size", "z", "samples"}:
             return require_number(value, expr)
@@ -323,6 +325,7 @@ class Evaluator:
             raise GeomTypeError(f"Style field '{field}' expects Boolean.", expr.span.line, expr.span.column)
         if field == "offset" and not isinstance(value, Vector):
             raise GeomTypeError("Style field 'offset' expects Vector.", expr.span.line, expr.span.column)
+        validate_style_enum(field, value, expr)
         return value
 
     def apply_scene(self, stmt: SceneStmt) -> None:
@@ -490,3 +493,21 @@ def tuple_pair(value: Any, expr: Expr) -> tuple[float, float]:
 def tuple_point(value: Any, expr: Expr) -> Point:
     x, y = tuple_pair(value, expr)
     return Point(x, y)
+
+
+def validate_style_enum(field: str, value: Any, expr: Expr) -> None:
+    choices = {
+        "pattern": {"solid", "dashed", "dotted"},
+        "marker": {"dot", "circle", "cross", "none"},
+        "anchor": {"center", "left", "right", "top", "bottom", "top-left", "top-right", "bottom-left", "bottom-right"},
+        "clip": {"viewport", "none"},
+    }
+    if field == "color":
+        if isinstance(value, str) and (value in {"black", "white", "red", "blue", "green", "gray"} or value.startswith("#")):
+            return
+        raise GeomTypeError("Style field 'color' expects a named color or hex color string.", expr.span.line, expr.span.column)
+    if field not in choices:
+        return
+    if not isinstance(value, str) or value not in choices[field]:
+        allowed = ", ".join(sorted(choices[field]))
+        raise GeomTypeError(f"Style field '{field}' expects one of: {allowed}.", expr.span.line, expr.span.column)
