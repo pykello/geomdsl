@@ -22,6 +22,16 @@ draw label(O, "$O$") @ {offset: vec(0.1, 0.1)}
 
 Comments start with `#`.
 
+Scene decoration can be controlled independently:
+
+```text
+scene(frame=false, ticks=false, tick_labels=false)
+```
+
+`frame` controls the outer box, `ticks` controls tick marks, and
+`tick_labels` controls numeric tick text. These options do not affect
+geometry, grid lines, or axes.
+
 ## Includes
 
 Use `include` to share common styles, defaults, and construction

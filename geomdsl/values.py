@@ -74,6 +74,9 @@ class Scene:
     grid_style: Style = field(default_factory=lambda: Style({"color": "#d8dde3", "weight": 0.55, "pattern": "dotted", "opacity": 0.9}))
     axes: bool = False
     axis_style: Style = field(default_factory=lambda: Style({"color": "#8f969e", "weight": 0.9, "pattern": "solid", "opacity": 1.0}))
+    frame: bool = True
+    ticks: bool = True
+    tick_labels: bool = True
     aspect: str = "equal"
     background: str = "white"
     padding: float = 0.0

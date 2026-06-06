@@ -431,7 +431,7 @@ class Evaluator:
                 setattr(self.scene, key, tuple_point(self.eval_expr(expr), expr))
             elif key == "size":
                 self.scene.size = tuple_pair(self.eval_expr(expr), expr)
-            elif key in {"grid", "axes"}:
+            elif key in {"grid", "axes", "frame", "ticks", "tick_labels"}:
                 value = self.eval_expr(expr)
                 if not isinstance(value, bool):
                     raise GeomTypeError(f"scene {key} expects Boolean.", expr.span.line, expr.span.column)

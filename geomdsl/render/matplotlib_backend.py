@@ -43,6 +43,12 @@ def render_scene(scene: Scene, *, output: str | None = None, fmt: str | None = N
     for spine in ax.spines.values():
         spine.set_linewidth(0.8)
         spine.set_color("#4a4f55")
+        spine.set_visible(scene.frame)
+
+    if not scene.ticks:
+        ax.tick_params(axis="both", which="both", length=0)
+    if not scene.tick_labels:
+        ax.tick_params(axis="both", which="both", labelbottom=False, labeltop=False, labelleft=False, labelright=False)
 
     for drawable in scene.sorted_drawables():
         if drawable.style.get("visible", True) is False:

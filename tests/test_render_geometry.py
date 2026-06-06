@@ -37,3 +37,30 @@ def test_scene_padding_rejects_negative_values():
         assert "padding" in str(exc)
     else:
         raise AssertionError("expected GeomValueError")
+
+
+def test_scene_decoration_controls_hide_frame_ticks_and_tick_labels():
+    fig = render("""
+scene(frame=false, ticks=false, tick_labels=false)
+draw marker(pt(0,0))
+""")
+    try:
+        ax = fig.axes[0]
+        assert all(not spine.get_visible() for spine in ax.spines.values())
+        assert all(tick.tick1line.get_markersize() == 0 for tick in ax.xaxis.majorTicks)
+        assert all(tick.tick1line.get_markersize() == 0 for tick in ax.yaxis.majorTicks)
+        assert not any(label.get_visible() for label in ax.get_xticklabels())
+        assert not any(label.get_visible() for label in ax.get_yticklabels())
+    finally:
+        plt.close(fig)
+
+
+def test_scene_decoration_controls_preserve_default_frame_and_ticks():
+    fig = render("draw marker(pt(0,0))")
+    try:
+        ax = fig.axes[0]
+        assert all(spine.get_visible() for spine in ax.spines.values())
+        assert any(tick.tick1line.get_markersize() > 0 for tick in ax.xaxis.majorTicks)
+        assert any(label.get_visible() for label in ax.get_xticklabels())
+    finally:
+        plt.close(fig)
