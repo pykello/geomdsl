@@ -252,6 +252,16 @@ class Evaluator:
             p1 = curve_point(c, require_number(args[1], expr), self, expr)
             p2 = curve_point(c, require_number(args[2], expr), self, expr)
             return Line(p1, nonzero_vector(Vector(p2.x - p1.x, p2.y - p1.y), expr))
+        if name == "sidelines":
+            require_len(name, args, 3, expr)
+            a = require_point(args[0], expr)
+            b = require_point(args[1], expr)
+            c = require_point(args[2], expr)
+            return [
+                Line(a, nonzero_vector(Vector(b.x - a.x, b.y - a.y), expr)),
+                Line(b, nonzero_vector(Vector(c.x - b.x, c.y - b.y), expr)),
+                Line(c, nonzero_vector(Vector(a.x - c.x, a.y - c.y), expr)),
+            ]
         if name == "LineSegment":
             a, b = require_points(name, args, expr)
             return LineSegment(a, b)

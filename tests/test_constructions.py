@@ -69,6 +69,37 @@ def test_secant_rejects_duplicate_curve_points():
         raise AssertionError("expected GeomValueError")
 
 
+def test_sidelines_returns_full_triangle_side_lines():
+    env = env_for("""
+A = pt(0, 0)
+B = pt(2, 0)
+C = pt(0, 3)
+sides = sidelines(A, B, C)
+AB = sides[0]
+BC = sides[1]
+CA = sides[2]
+""")
+    assert len(env["sides"]) == 3
+    assert env["AB"].a == env["A"]
+    assert env["AB"].v.x == 2
+    assert env["AB"].v.y == 0
+    assert env["BC"].a == env["B"]
+    assert env["BC"].v.x == -2
+    assert env["BC"].v.y == 3
+    assert env["CA"].a == env["C"]
+    assert env["CA"].v.x == 0
+    assert env["CA"].v.y == -3
+
+
+def test_sidelines_rejects_duplicate_vertices():
+    try:
+        env_for("sides = sidelines(pt(0,0), pt(0,0), pt(1,0))")
+    except GeomValueError as exc:
+        assert "nonzero direction" in str(exc)
+    else:
+        raise AssertionError("expected GeomValueError")
+
+
 def test_circle_construction_helpers():
     env = env_for("""
 A = pt(0, 0)
