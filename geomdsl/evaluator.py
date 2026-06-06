@@ -217,6 +217,26 @@ class Evaluator:
         if name == "midpoint":
             a, b = require_points(name, args, expr)
             return Point(a.x + 0.5 * (b.x - a.x), a.y + 0.5 * (b.y - a.y))
+        if name == "direction":
+            require_len(name, args, 1, expr)
+            return line_like_direction(args[0], expr)
+        if name == "line_through":
+            a, b = require_points(name, args, expr)
+            return Line(a, nonzero_vector(Vector(b.x - a.x, b.y - a.y), expr))
+        if name == "parallel":
+            require_len(name, args, 2, expr)
+            p = require_point(args[1], expr)
+            return Line(p, line_like_direction(args[0], expr))
+        if name == "perpendicular":
+            require_len(name, args, 2, expr)
+            p = require_point(args[1], expr)
+            v = line_like_direction(args[0], expr)
+            return Line(p, Vector(-v.y, v.x))
+        if name == "perpendicular_bisector":
+            a, b = require_points(name, args, expr)
+            v = nonzero_vector(Vector(b.x - a.x, b.y - a.y), expr)
+            m = Point(a.x + 0.5 * v.x, a.y + 0.5 * v.y)
+            return Line(m, Vector(-v.y, v.x))
         if name == "LineSegment":
             a, b = require_points(name, args, expr)
             return LineSegment(a, b)
@@ -472,6 +492,22 @@ def require_fillable_curve(value: Any, expr: Expr, evaluator: Evaluator) -> Curv
         if math.hypot(p1.x - p0.x, p1.y - p0.y) < 1e-6:
             return curve
     raise GeomTypeError("fill(Curve) requires a closed curve.", expr.span.line, expr.span.column)
+
+
+def nonzero_vector(v: Vector, expr: Expr) -> Vector:
+    if math.hypot(v.x, v.y) < 1e-12:
+        raise GeomValueError("Expected nonzero direction vector.", expr.span.line, expr.span.column)
+    return v
+
+
+def line_like_direction(value: Any, expr: Expr) -> Vector:
+    if isinstance(value, Line):
+        return nonzero_vector(value.v, expr)
+    if isinstance(value, Ray):
+        return nonzero_vector(value.v, expr)
+    if isinstance(value, LineSegment):
+        return nonzero_vector(Vector(value.b.x - value.a.x, value.b.y - value.a.y), expr)
+    raise GeomTypeError(f"Expected line-like Curve, got {type_name(value)}.", expr.span.line, expr.span.column)
 
 
 def require_points(name: str, args: list[Any], expr: CallExpr) -> tuple[Point, Point]:

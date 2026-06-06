@@ -128,6 +128,22 @@ midpoint(A, B)
 
 `unit(vec(0,0))` is an error.
 
+## Construction helpers
+
+Line-like helpers accept `Line`, `Ray`, and `LineSegment`.
+
+```text
+L = line_through(A, B)
+d = direction(L)
+P = midpoint(A, B)
+
+L2 = parallel(L, P)
+N = perpendicular(L, P)
+B = perpendicular_bisector(A, B)
+```
+
+`line_through(A, A)` and zero-length line-like directions are errors.
+
 ## Curves
 
 ```text
