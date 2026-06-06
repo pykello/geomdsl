@@ -170,6 +170,14 @@ class Evaluator:
             start = self.eval_number(pr.start)
             end = self.eval_number(pr.end)
             return ParametricCurve(expr.args[0], pr.name, start, end, dict(self.env))
+        if name == "graph":
+            if len(expr.args) != 2 or not isinstance(expr.args[1], ParamRange) or isinstance(expr.args[0], ParamRange):
+                raise GeomTypeError("graph(Expr, x = start..end) expected.", expr.span.line, expr.span.column)
+            pr = expr.args[1]
+            start = self.eval_number(pr.start)
+            end = self.eval_number(pr.end)
+            point_expr = CallExpr(expr.span, "pt", [VarExpr(pr.span, pr.name), expr.args[0]])
+            return ParametricCurve(point_expr, pr.name, start, end, dict(self.env))
         args = [self.eval_param_arg(a) for a in expr.args]
         return self.call_builtin(name, args, expr)
 

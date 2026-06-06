@@ -229,6 +229,7 @@ Ray(A, v)
 Circle(C, r)
 Arc(C, r, theta0, theta1)
 ParametricCurve(pt(cos(t), sin(t)), t = 0..2*pi)
+graph(sin(x), x = -2*pi..2*pi)
 ```
 
 Curves are directly drawable:
