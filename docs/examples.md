@@ -12,6 +12,18 @@ python3 -m geomdsl.cli examples/vector_curve.geom -o /tmp/vector_curve.svg
 python3 -m geomdsl.cli examples/filled_cube.geom -o /tmp/filled_cube.svg
 ```
 
+## Construction and theorem examples
+
+These examples use construction helpers such as `circle_through`,
+`intersections`, `topmost`, `perpendicular`, and `intersect`.
+
+```bash
+python3 -m geomdsl.cli examples/constructions/equilateral_triangle.geom -o /tmp/equilateral_triangle.svg
+python3 -m geomdsl.cli examples/constructions/perpendicular_bisector.geom -o /tmp/perpendicular_bisector.svg
+python3 -m geomdsl.cli examples/theorems/circumcenter_perpendicular_bisectors.geom -o /tmp/circumcenter.svg
+python3 -m geomdsl.cli examples/theorems/orthocenter_altitudes.geom -o /tmp/orthocenter.svg
+```
+
 ## Textbook-inspired examples
 
 These are original diagrams inspired by open online educational sources. They are not direct copies of textbook figures.
