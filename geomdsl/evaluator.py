@@ -280,7 +280,7 @@ class Evaluator:
             return Drawable("label", {"point": require_point(args[0], expr), "text": args[1]})
         if name == "fill":
             require_len(name, args, 1, expr)
-            return Drawable("fill", {"curve": require_curve(args[0], expr)})
+            return Drawable("fill", {"curve": require_fillable_curve(args[0], expr, self)})
         raise GeomNameError(f"Unknown function '{name}'.", expr.span.line, expr.span.column)
 
     def eval_draw(self, stmt: DrawStmt) -> None:
@@ -445,6 +445,21 @@ def require_curve(value: Any, expr: Expr) -> Curve:
     if not isinstance(value, Curve):
         raise GeomTypeError(f"Expected Curve, got {type_name(value)}.", expr.span.line, expr.span.column)
     return value
+
+
+def require_fillable_curve(value: Any, expr: Expr, evaluator: Evaluator) -> Curve:
+    curve = require_curve(value, expr)
+    if isinstance(curve, Circle):
+        return curve
+    if isinstance(curve, Arc) and abs(abs(curve.theta1 - curve.theta0) - 2.0 * math.pi) < 1e-9:
+        return curve
+    if isinstance(curve, ParametricCurve):
+        start, end = curve.domain()
+        p0 = curve.point_at(start, evaluator)
+        p1 = curve.point_at(end, evaluator)
+        if math.hypot(p1.x - p0.x, p1.y - p0.y) < 1e-6:
+            return curve
+    raise GeomTypeError("fill(Curve) requires a closed curve.", expr.span.line, expr.span.column)
 
 
 def require_points(name: str, args: list[Any], expr: CallExpr) -> tuple[Point, Point]:

@@ -2,6 +2,7 @@ import matplotlib
 matplotlib.use("Agg")
 
 from geomdsl import evaluate, render
+from geomdsl.errors import GeomTypeError
 
 
 FILL_SOURCE = """
@@ -20,6 +21,15 @@ def test_fill_curve_drawable_style():
     assert fill.style.get("color") == "red"
     assert fill.style.get("opacity") == 0.25
     assert fill.style.get("z") == 1
+
+
+def test_fill_rejects_open_curve():
+    try:
+        evaluate("draw fill(LineSegment(pt(0,0), pt(1,1)))")
+    except GeomTypeError as exc:
+        assert "closed curve" in str(exc)
+    else:
+        raise AssertionError("expected GeomTypeError")
 
 
 def test_fill_curve_exports_svg(tmp_path):
