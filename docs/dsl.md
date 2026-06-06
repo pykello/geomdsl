@@ -148,6 +148,27 @@ c2 = circle_with_diameter(A, B)
 `line_through(A, A)` and zero-length line-like directions are errors.
 The circle construction helpers require distinct defining points.
 
+## Intersections
+
+Use `intersections(a, b)` when a construction can produce zero, one,
+or multiple points. Use `intersect(a, b)` only when exactly one point is
+expected.
+
+```text
+L1 = line_through(A, B)
+L2 = perpendicular(L1, P)
+Q = intersect(L1, L2)
+
+c = circle_through(A, B)
+Ps = intersections(c, L1)
+P0 = Ps[0]
+P1 = Ps[1]
+```
+
+Supported pairs are line-like curves with line-like curves, line-like
+curves with circles, and circles with circles. Coincident or overlapping
+inputs are errors because they have infinitely many intersections.
+
 ## Curves
 
 ```text

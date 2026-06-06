@@ -70,3 +70,59 @@ def test_circle_through_rejects_duplicate_points():
         assert "distinct points" in str(exc)
     else:
         raise AssertionError("expected GeomValueError")
+
+
+def test_intersect_returns_single_point():
+    env = env_for("""
+L1 = line_through(pt(0, 0), pt(2, 0))
+L2 = perpendicular(L1, pt(1, 0))
+P = intersect(L1, L2)
+""")
+    assert abs(env["P"].x - 1) < 1e-9
+    assert abs(env["P"].y) < 1e-9
+
+
+def test_intersections_returns_circle_line_points():
+    env = env_for("""
+c = Circle(pt(0, 0), 1)
+L = Line(pt(0, 0), vec(1, 0))
+Ps = intersections(c, L)
+A = Ps[0]
+B = Ps[1]
+""")
+    assert len(env["Ps"]) == 2
+    assert abs(env["A"].x + 1) < 1e-9
+    assert abs(env["A"].y) < 1e-9
+    assert abs(env["B"].x - 1) < 1e-9
+    assert abs(env["B"].y) < 1e-9
+
+
+def test_intersections_respects_line_segment_bounds():
+    env = env_for("""
+seg = LineSegment(pt(0, 0), pt(1, 0))
+c = Circle(pt(0, 0), 2)
+Ps = intersections(seg, c)
+""")
+    assert env["Ps"] == []
+
+
+def test_intersect_rejects_multiple_points():
+    try:
+        env_for("P = intersect(Circle(pt(0,0), 1), Line(pt(0,0), vec(1,0)))")
+    except GeomValueError as exc:
+        assert "exactly one point" in str(exc)
+    else:
+        raise AssertionError("expected GeomValueError")
+
+
+def test_intersections_rejects_coincident_lines():
+    try:
+        env_for("""
+L1 = Line(pt(0, 0), vec(1, 0))
+L2 = Line(pt(1, 0), vec(2, 0))
+Ps = intersections(L1, L2)
+""")
+    except GeomValueError as exc:
+        assert "infinitely many" in str(exc)
+    else:
+        raise AssertionError("expected GeomValueError")

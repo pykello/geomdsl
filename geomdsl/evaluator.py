@@ -272,6 +272,15 @@ class Evaluator:
         if name == "Arc":
             require_len(name, args, 4, expr)
             return Arc(require_point(args[0], expr), require_number(args[1], expr), require_number(args[2], expr), require_number(args[3], expr))
+        if name == "intersections":
+            require_len(name, args, 2, expr)
+            return curve_intersections(args[0], args[1], expr)
+        if name == "intersect":
+            require_len(name, args, 2, expr)
+            points = curve_intersections(args[0], args[1], expr)
+            if len(points) != 1:
+                raise GeomValueError(f"intersect expected exactly one point, got {len(points)}.", expr.span.line, expr.span.column)
+            return points[0]
         if name == "curve_at":
             require_len(name, args, 2, expr)
             return curve_point(require_curve(args[0], expr), require_number(args[1], expr), self, expr)
@@ -525,6 +534,123 @@ def line_like_direction(value: Any, expr: Expr) -> Vector:
     if isinstance(value, LineSegment):
         return nonzero_vector(Vector(value.b.x - value.a.x, value.b.y - value.a.y), expr)
     raise GeomTypeError(f"Expected line-like Curve, got {type_name(value)}.", expr.span.line, expr.span.column)
+
+
+def curve_intersections(a: Any, b: Any, expr: Expr) -> list[Point]:
+    if is_line_like(a) and is_line_like(b):
+        return line_line_intersections(a, b, expr)
+    if is_line_like(a) and isinstance(b, Circle):
+        return line_circle_intersections(a, b, expr)
+    if isinstance(a, Circle) and is_line_like(b):
+        return line_circle_intersections(b, a, expr)
+    if isinstance(a, Circle) and isinstance(b, Circle):
+        return circle_circle_intersections(a, b, expr)
+    raise GeomTypeError("intersections supports line-like curves and circles.", expr.span.line, expr.span.column)
+
+
+def is_line_like(value: Any) -> bool:
+    return isinstance(value, (Line, Ray, LineSegment))
+
+
+def line_like_point(value: Any, expr: Expr) -> Point:
+    if isinstance(value, (Line, Ray, LineSegment)):
+        return value.a
+    raise GeomTypeError(f"Expected line-like Curve, got {type_name(value)}.", expr.span.line, expr.span.column)
+
+
+def line_like_contains(value: Any, p: Point, expr: Expr) -> bool:
+    a = line_like_point(value, expr)
+    v = line_like_direction(value, expr)
+    w = Vector(p.x - a.x, p.y - a.y)
+    if abs(cross_vectors(w, v)) > 1e-7:
+        return False
+    if isinstance(value, Line):
+        return True
+    dot = dot_vectors(w, v)
+    if isinstance(value, Ray):
+        return dot >= -1e-9
+    return -1e-9 <= dot <= dot_vectors(v, v) + 1e-9
+
+
+def line_line_intersections(a: Any, b: Any, expr: Expr) -> list[Point]:
+    p = line_like_point(a, expr)
+    r = line_like_direction(a, expr)
+    q = line_like_point(b, expr)
+    s = line_like_direction(b, expr)
+    qp = Vector(q.x - p.x, q.y - p.y)
+    denom = cross_vectors(r, s)
+    if abs(denom) < 1e-12:
+        if abs(cross_vectors(qp, r)) < 1e-9:
+            raise GeomValueError("intersections has infinitely many points.", expr.span.line, expr.span.column)
+        return []
+    t = cross_vectors(qp, s) / denom
+    point = Point(p.x + t * r.x, p.y + t * r.y)
+    if line_like_contains(a, point, expr) and line_like_contains(b, point, expr):
+        return [point]
+    return []
+
+
+def line_circle_intersections(line: Any, circle: Circle, expr: Expr) -> list[Point]:
+    p = line_like_point(line, expr)
+    v = line_like_direction(line, expr)
+    f = Vector(p.x - circle.center.x, p.y - circle.center.y)
+    a = dot_vectors(v, v)
+    b = 2.0 * dot_vectors(f, v)
+    c = dot_vectors(f, f) - circle.radius * circle.radius
+    disc = b * b - 4.0 * a * c
+    if disc < -1e-9:
+        return []
+    if abs(disc) <= 1e-9:
+        roots = [-b / (2.0 * a)]
+    else:
+        root = math.sqrt(max(0.0, disc))
+        roots = [(-b - root) / (2.0 * a), (-b + root) / (2.0 * a)]
+    points = [Point(p.x + t * v.x, p.y + t * v.y) for t in roots]
+    return unique_points([q for q in points if line_like_contains(line, q, expr)])
+
+
+def circle_circle_intersections(a: Circle, b: Circle, expr: Expr) -> list[Point]:
+    dx = b.center.x - a.center.x
+    dy = b.center.y - a.center.y
+    d = math.hypot(dx, dy)
+    if d < 1e-12:
+        if abs(a.radius - b.radius) < 1e-9:
+            raise GeomValueError("intersections has infinitely many points.", expr.span.line, expr.span.column)
+        return []
+    if d > a.radius + b.radius + 1e-9:
+        return []
+    if d < abs(a.radius - b.radius) - 1e-9:
+        return []
+    along = (a.radius * a.radius - b.radius * b.radius + d * d) / (2.0 * d)
+    h2 = a.radius * a.radius - along * along
+    if h2 < -1e-9:
+        return []
+    ux = dx / d
+    uy = dy / d
+    base = Point(a.center.x + along * ux, a.center.y + along * uy)
+    if abs(h2) <= 1e-9:
+        return [base]
+    h = math.sqrt(max(0.0, h2))
+    return [
+        Point(base.x - h * uy, base.y + h * ux),
+        Point(base.x + h * uy, base.y - h * ux),
+    ]
+
+
+def dot_vectors(a: Vector, b: Vector) -> float:
+    return a.x * b.x + a.y * b.y
+
+
+def cross_vectors(a: Vector, b: Vector) -> float:
+    return a.x * b.y - a.y * b.x
+
+
+def unique_points(points: list[Point]) -> list[Point]:
+    unique: list[Point] = []
+    for p in points:
+        if not any(distance_between(p, q) < 1e-9 for q in unique):
+            unique.append(p)
+    return unique
 
 
 def require_points(name: str, args: list[Any], expr: CallExpr) -> tuple[Point, Point]:
