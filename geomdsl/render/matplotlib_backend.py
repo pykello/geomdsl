@@ -18,8 +18,8 @@ def render_scene(scene: Scene, *, output: str | None = None, fmt: str | None = N
     fig, ax = plt.subplots(figsize=scene.size, dpi=dpi)
     fig.patch.set_facecolor(scene.background)
     ax.set_facecolor(scene.background)
-    ax.set_xlim(scene.min.x, scene.max.x)
-    ax.set_ylim(scene.min.y, scene.max.y)
+    ax.set_xlim(scene.min.x - scene.padding, scene.max.x + scene.padding)
+    ax.set_ylim(scene.min.y - scene.padding, scene.max.y + scene.padding)
     ax.set_aspect(scene.aspect)
     ax.set_axisbelow(True)
 

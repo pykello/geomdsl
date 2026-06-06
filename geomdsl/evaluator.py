@@ -411,8 +411,13 @@ class Evaluator:
                 if not isinstance(value, bool):
                     raise GeomTypeError(f"scene {key} expects Boolean.", expr.span.line, expr.span.column)
                 setattr(self.scene, key, value)
-            elif key in {"grid_step", "padding"}:
+            elif key == "grid_step":
                 setattr(self.scene, key, self.eval_number(expr))
+            elif key == "padding":
+                padding = self.eval_number(expr)
+                if padding < 0:
+                    raise GeomValueError("scene padding must be nonnegative.", expr.span.line, expr.span.column)
+                self.scene.padding = padding
             elif key in {"aspect", "background"}:
                 setattr(self.scene, key, self.eval_identifier_or_value(expr))
             elif key in {"grid_style", "axis_style"}:
