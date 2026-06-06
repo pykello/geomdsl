@@ -32,11 +32,7 @@ draw fill(top) @ top_fill
 draw fill(right) @ side_fill
 draw fill(front) @ front_fill
 
-# Visible silhouette and shared edges.
-draw LineSegment(A, B) @ edge
-draw LineSegment(B, C) @ edge
-draw LineSegment(C, D) @ edge
-draw LineSegment(D, A) @ edge
+draw front @ edge
 
 draw LineSegment(B, B2) @ edge
 draw LineSegment(C, C2) @ edge

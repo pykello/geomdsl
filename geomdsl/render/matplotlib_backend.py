@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from ..errors import GeomRenderError
-from ..values import Circle, Curve, Drawable, Line, Point, Ray, Scene, Style, Vector
+from ..values import Circle, Curve, Drawable, Line, Point, PolygonCurve, Ray, Scene, Style, Vector
 
 
 def render_scene(scene: Scene, *, output: str | None = None, fmt: str | None = None, dpi: int | None = None):
@@ -139,6 +139,10 @@ def render_fill(ax: Any, scene: Scene, curve: Curve, style: Style) -> None:
 
 
 def sample_curve(curve: Curve, scene: Scene, samples: int) -> list[Point]:
+    if isinstance(curve, PolygonCurve):
+        if not curve.points:
+            return []
+        return [*curve.points, curve.points[0]]
     if isinstance(curve, Line):
         return clip_line(curve.a, curve.v, scene, ray=False)
     if isinstance(curve, Ray):
