@@ -166,11 +166,15 @@ L2 = parallel(L, P)
 N = perpendicular(L, P)
 B = perpendicular_bisector(A, B)
 
+S = secant(curve, t1, t2)
+
 c1 = circle_through(A, B)
 c2 = circle_with_diameter(A, B)
 ```
 
 `line_through(A, A)` and zero-length line-like directions are errors.
+`secant(curve, t1, t2)` draws the full line through
+`curve_at(curve, t1)` and `curve_at(curve, t2)`.
 The circle construction helpers require distinct defining points.
 
 ## Intersections

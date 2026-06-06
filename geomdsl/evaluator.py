@@ -246,6 +246,12 @@ class Evaluator:
             v = nonzero_vector(Vector(b.x - a.x, b.y - a.y), expr)
             m = Point(a.x + 0.5 * v.x, a.y + 0.5 * v.y)
             return Line(m, Vector(-v.y, v.x))
+        if name == "secant":
+            require_len(name, args, 3, expr)
+            c = require_curve(args[0], expr)
+            p1 = curve_point(c, require_number(args[1], expr), self, expr)
+            p2 = curve_point(c, require_number(args[2], expr), self, expr)
+            return Line(p1, nonzero_vector(Vector(p2.x - p1.x, p2.y - p1.y), expr))
         if name == "LineSegment":
             a, b = require_points(name, args, expr)
             return LineSegment(a, b)

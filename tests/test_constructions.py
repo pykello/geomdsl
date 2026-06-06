@@ -49,6 +49,26 @@ def test_parallel_expects_line_like_curve():
         raise AssertionError("expected GeomTypeError")
 
 
+def test_secant_constructs_line_through_curve_points():
+    env = env_for("""
+c = ParametricCurve(pt(t, t*t), t = 0..2)
+L = secant(c, 0, 2)
+""")
+    assert abs(env["L"].a.x) < 1e-9
+    assert abs(env["L"].a.y) < 1e-9
+    assert abs(env["L"].v.x - 2) < 1e-9
+    assert abs(env["L"].v.y - 4) < 1e-9
+
+
+def test_secant_rejects_duplicate_curve_points():
+    try:
+        env_for("c = Circle(pt(0,0), 1)\nL = secant(c, 0, 2*pi)")
+    except GeomValueError as exc:
+        assert "nonzero direction" in str(exc)
+    else:
+        raise AssertionError("expected GeomValueError")
+
+
 def test_circle_construction_helpers():
     env = env_for("""
 A = pt(0, 0)
