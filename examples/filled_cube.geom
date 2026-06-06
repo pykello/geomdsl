@@ -32,7 +32,7 @@ draw fill(top) @ top_fill
 draw fill(right) @ side_fill
 draw fill(front) @ front_fill
 
-# Visible edges.
+# Visible silhouette and shared edges.
 draw LineSegment(A, B) @ edge
 draw LineSegment(B, C) @ edge
 draw LineSegment(C, D) @ edge
@@ -44,7 +44,6 @@ draw LineSegment(D, D2) @ edge
 
 draw LineSegment(B2, C2) @ edge
 draw LineSegment(C2, D2) @ edge
-draw LineSegment(D2, D) @ edge
 
 # A few hidden/back edges give the projection context without dominating.
 draw LineSegment(A, A2) @ hidden
