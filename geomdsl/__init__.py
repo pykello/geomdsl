@@ -21,13 +21,13 @@ __all__ = [
 ]
 
 
-def render(source: str, *, output: str | None = None, fmt: str | None = None, dpi: int = 150, backend: str = "matplotlib"):
+def render(source: str, *, output: str | None = None, fmt: str | None = None, dpi: int | None = None, backend: str = "matplotlib"):
     if backend != "matplotlib":
         raise GeomRenderError(f"Unknown backend '{backend}'.")
     scene = evaluate(source)
     return render_scene(scene, output=output, fmt=fmt, dpi=dpi)
 
 
-def render_file(path: str, *, output: str | None = None, fmt: str | None = None, dpi: int = 150, backend: str = "matplotlib"):
+def render_file(path: str, *, output: str | None = None, fmt: str | None = None, dpi: int | None = None, backend: str = "matplotlib"):
     source = Path(path).read_text(encoding="utf-8")
     return render(source, output=output, fmt=fmt, dpi=dpi, backend=backend)

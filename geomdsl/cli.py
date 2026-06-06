@@ -15,7 +15,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("input", help="Input .geom file")
     parser.add_argument("-o", "--output")
     parser.add_argument("--format", dest="fmt")
-    parser.add_argument("--dpi", type=int, default=150)
+    parser.add_argument("--dpi", type=int, default=None)
     parser.add_argument("--show", action="store_true")
     parser.add_argument("--dump-ast", action="store_true")
     parser.add_argument("--dump-scene", action="store_true")

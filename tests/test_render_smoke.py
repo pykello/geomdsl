@@ -23,3 +23,8 @@ def test_render_exports_svg(tmp_path):
     render(SOURCE, output=str(out))
     assert out.exists()
     assert "<svg" in out.read_text(encoding="utf-8", errors="ignore")
+
+
+def test_render_uses_export_dpi_when_not_overridden():
+    fig = render("export(dpi=240)\ndraw marker(pt(0,0))")
+    assert fig.dpi == 240

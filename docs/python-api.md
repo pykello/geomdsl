@@ -65,7 +65,7 @@ render(
     *,
     output: str | None = None,
     fmt: str | None = None,
-    dpi: int = 150,
+    dpi: int | None = None,
     backend: str = "matplotlib",
 )
 
@@ -74,7 +74,7 @@ render_file(
     *,
     output: str | None = None,
     fmt: str | None = None,
-    dpi: int = 150,
+    dpi: int | None = None,
     backend: str = "matplotlib",
 )
 ```

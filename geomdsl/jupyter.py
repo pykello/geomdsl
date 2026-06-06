@@ -13,7 +13,7 @@ class GeomMagics(Magics):
     @cell_magic
     def geom(self, line: str, cell: str):
         parser = argparse.ArgumentParser(prog="%%geom", add_help=False)
-        parser.add_argument("--dpi", type=int, default=150)
+        parser.add_argument("--dpi", type=int, default=None)
         parser.add_argument("--format", dest="fmt")
         args = parser.parse_args(line.split())
         fig = render(cell, dpi=args.dpi, fmt=args.fmt)
