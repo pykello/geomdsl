@@ -9,6 +9,7 @@ python3 -m geomdsl.cli examples/basic_axes.geom -o /tmp/basic_axes.svg
 python3 -m geomdsl.cli examples/circle_tangent.geom -o /tmp/circle_tangent.svg
 python3 -m geomdsl.cli examples/line_segment.geom -o /tmp/line_segment.svg
 python3 -m geomdsl.cli examples/vector_curve.geom -o /tmp/vector_curve.svg
+python3 -m geomdsl.cli examples/filled_cube.geom -o /tmp/filled_cube.svg
 ```
 
 ## Textbook-inspired examples

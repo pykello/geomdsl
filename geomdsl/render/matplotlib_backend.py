@@ -58,6 +58,9 @@ def render_scene(scene: Scene, *, output: str | None = None, fmt: str | None = N
 
 
 def render_drawable(ax: Any, scene: Scene, drawable: Drawable) -> None:
+    if drawable.kind == "fill":
+        render_fill(ax, scene, drawable.data["curve"], drawable.style)
+        return
     if drawable.kind == "curve":
         render_curve(ax, scene, drawable.data["curve"], drawable.style)
         return
@@ -112,6 +115,26 @@ def render_curve(ax: Any, scene: Scene, curve: Curve, style: Style) -> None:
     if not points:
         return
     ax.plot([p.x for p in points], [p.y for p in points], **line_kwargs(style), zorder=style.get("z", 0))
+
+
+def render_fill(ax: Any, scene: Scene, curve: Curve, style: Style) -> None:
+    samples = max(3, int(style.get("samples", 300)))
+    points = sample_curve(curve, scene, samples)
+    if not points:
+        return
+    xs = [p.x for p in points]
+    ys = [p.y for p in points]
+    if xs[0] != xs[-1] or ys[0] != ys[-1]:
+        xs.append(xs[0])
+        ys.append(ys[0])
+    ax.fill(
+        xs,
+        ys,
+        color=style.get("color", "black"),
+        alpha=style.get("opacity", 1.0),
+        linewidth=0,
+        zorder=style.get("z", 0),
+    )
 
 
 def sample_curve(curve: Curve, scene: Scene, samples: int) -> list[Point]:

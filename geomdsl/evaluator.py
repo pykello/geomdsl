@@ -278,6 +278,9 @@ class Evaluator:
             if not isinstance(args[1], str):
                 raise GeomTypeError("label(Point, String) expected.", expr.span.line, expr.span.column)
             return Drawable("label", {"point": require_point(args[0], expr), "text": args[1]})
+        if name == "fill":
+            require_len(name, args, 1, expr)
+            return Drawable("fill", {"curve": require_curve(args[0], expr)})
         raise GeomNameError(f"Unknown function '{name}'.", expr.span.line, expr.span.column)
 
     def eval_draw(self, stmt: DrawStmt) -> None:
