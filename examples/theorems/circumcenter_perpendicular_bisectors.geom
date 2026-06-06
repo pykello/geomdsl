@@ -37,4 +37,4 @@ draw label(B, "$B$") @ {offset: vec(0.15, -0.13)}
 draw label(C, "$C$") @ {offset: vec(0.08, 0.16)}
 draw label(O, "$O$") @ {offset: vec(0.14, 0.14)}
 
-draw label(pt(-2.35, 1.88), "circumcenter from perpendicular bisectors") @ {anchor: left, font_size: 14}
+draw label(pt(-2.35, -1.12), "circumcenter theorem") @ {anchor: left, font_size: 13}

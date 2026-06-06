@@ -1,4 +1,4 @@
-scene(min=(-2.3,-1.85), max=(2.3,1.95), size=(6.2,5.0), grid=false, axes=false)
+scene(min=(-2.3,-2.05), max=(2.3,2.08), size=(6.2,5.0), grid=false, axes=false)
 
 defaults {
   curve: {color: "#1f2933", weight: 1.6, z: 10}
@@ -34,8 +34,8 @@ draw marker(M) @ {color: red, size: 26}
 
 draw label(A, "$A$") @ {offset: vec(-0.16, -0.12)}
 draw label(B, "$B$") @ {offset: vec(0.16, -0.12)}
-draw label(U, "$U$") @ {offset: vec(0.12, 0.12)}
-draw label(D, "$D$") @ {offset: vec(0.12, -0.12)}
+draw label(U, "$U$") @ {offset: vec(0.16, 0.1)}
+draw label(D, "$D$") @ {offset: vec(0.14, -0.18)}
 draw label(M, "$M$") @ {offset: vec(0.14, 0.14)}
 
-draw label(pt(-2.05, 1.62), "perpendicular bisector construction") @ {anchor: left, font_size: 14}
+draw label(pt(-2.05, -1.82), "perpendicular bisector") @ {anchor: left, font_size: 13}

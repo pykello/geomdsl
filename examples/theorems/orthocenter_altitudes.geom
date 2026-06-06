@@ -36,4 +36,4 @@ draw label(B, "$B$") @ {offset: vec(0.15, -0.14)}
 draw label(C, "$C$") @ {offset: vec(0.08, 0.16)}
 draw label(H, "$H$") @ {offset: vec(0.14, 0.12)}
 
-draw label(pt(-2.25, 1.92), "orthocenter from two altitudes") @ {anchor: left, font_size: 14}
+draw label(pt(-2.25, -1.12), "orthocenter theorem") @ {anchor: left, font_size: 13}

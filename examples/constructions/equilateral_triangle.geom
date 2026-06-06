@@ -32,4 +32,4 @@ draw label(A, "$A$") @ {offset: vec(-0.12, -0.15)}
 draw label(B, "$B$") @ {offset: vec(0.12, -0.15)}
 draw label(C, "$C$") @ {offset: vec(0, 0.16)}
 
-draw label(pt(-0.52, 1.88), "equilateral triangle by two circles") @ {anchor: left, font_size: 14}
+draw label(pt(-0.52, -0.38), "equilateral triangle by two circles") @ {anchor: left, font_size: 14}
