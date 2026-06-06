@@ -169,6 +169,42 @@ arrow_between(A, B)
 label(P, "$P$")
 ```
 
+
+## Filled regions
+
+Use `fill(curve)` to fill a closed curve. Draw the outline separately when you want independent stroke styling.
+
+```text
+c = Circle(pt(0,0), 1)
+
+draw fill(c) @ {color: "#87ceeb", opacity: 0.35, z: 1}
+draw c       @ {color: blue, weight: 2, z: 2}
+```
+
+`fill(curve)` requires a closed curve. It accepts circles, full arcs, closed parametric curves, and polygonal curves.
+
+For polygonal regions, use `polygon(...)` or `quad(...)`:
+
+```text
+A = pt(0,0)
+B = pt(2,0)
+C = pt(2,1)
+D = pt(0,1)
+
+face = quad(A, B, C, D)
+
+draw fill(face) @ {color: "#ffeeaa", opacity: 0.45, z: 1}
+draw face       @ {color: black, weight: 1.5, z: 2}
+```
+
+Fill defaults can be configured with the `fill` category:
+
+```text
+defaults {
+  fill: {color: "#87ceeb", opacity: 0.3, z: 1}
+}
+```
+
 ## Styles
 
 Named style:

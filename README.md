@@ -65,6 +65,9 @@ draw c
 draw marker(P)
 draw arrow(P, 0.5*T)
 draw label(P, "$P$") @ {offset: vec(0.1, 0.1)}
+
+# closed regions can be filled independently from their outline
+draw fill(c) @ {color: "#87ceeb", opacity: 0.25, z: 1}
 ```
 
 ## Python API
