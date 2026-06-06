@@ -126,3 +126,31 @@ Ps = intersections(L1, L2)
         assert "infinitely many" in str(exc)
     else:
         raise AssertionError("expected GeomValueError")
+
+
+def test_point_selection_helpers():
+    env = env_for("""
+c1 = Circle(pt(0, 0), 1)
+c2 = Circle(pt(1, 0), 1)
+Ps = intersections(c1, c2)
+T = topmost(Ps)
+B = bottommost(Ps)
+N = nearest(Ps, pt(0.5, 1))
+""")
+    assert len(env["Ps"]) == 2
+    assert env["T"].y > 0
+    assert env["B"].y < 0
+    assert env["N"] == env["T"]
+
+
+def test_point_selection_rejects_empty_list():
+    try:
+        env_for("""
+c1 = Circle(pt(0, 0), 1)
+c2 = Circle(pt(5, 0), 1)
+P = topmost(intersections(c1, c2))
+""")
+    except GeomValueError as exc:
+        assert "at least one point" in str(exc)
+    else:
+        raise AssertionError("expected GeomValueError")

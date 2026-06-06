@@ -281,6 +281,27 @@ class Evaluator:
             if len(points) != 1:
                 raise GeomValueError(f"intersect expected exactly one point, got {len(points)}.", expr.span.line, expr.span.column)
             return points[0]
+        if name == "nearest":
+            require_len(name, args, 2, expr)
+            points = require_point_list(name, args[0], expr)
+            target = require_point(args[1], expr)
+            return min(points, key=lambda p: distance_between(p, target))
+        if name == "leftmost":
+            require_len(name, args, 1, expr)
+            points = require_point_list(name, args[0], expr)
+            return min(points, key=lambda p: (p.x, p.y))
+        if name == "rightmost":
+            require_len(name, args, 1, expr)
+            points = require_point_list(name, args[0], expr)
+            return max(points, key=lambda p: (p.x, -p.y))
+        if name == "topmost":
+            require_len(name, args, 1, expr)
+            points = require_point_list(name, args[0], expr)
+            return max(points, key=lambda p: (p.y, -p.x))
+        if name == "bottommost":
+            require_len(name, args, 1, expr)
+            points = require_point_list(name, args[0], expr)
+            return min(points, key=lambda p: (p.y, p.x))
         if name == "curve_at":
             require_len(name, args, 2, expr)
             return curve_point(require_curve(args[0], expr), require_number(args[1], expr), self, expr)
@@ -500,6 +521,14 @@ def require_vector(value: Any, expr: Expr) -> Vector:
 def require_curve(value: Any, expr: Expr) -> Curve:
     if not isinstance(value, Curve):
         raise GeomTypeError(f"Expected Curve, got {type_name(value)}.", expr.span.line, expr.span.column)
+    return value
+
+
+def require_point_list(name: str, value: Any, expr: Expr) -> list[Point]:
+    if not isinstance(value, list) or not all(isinstance(p, Point) for p in value):
+        raise GeomTypeError(f"{name} expects List[Point].", expr.span.line, expr.span.column)
+    if not value:
+        raise GeomValueError(f"{name} requires at least one point.", expr.span.line, expr.span.column)
     return value
 
 

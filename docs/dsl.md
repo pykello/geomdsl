@@ -163,11 +163,18 @@ c = circle_through(A, B)
 Ps = intersections(c, L1)
 P0 = Ps[0]
 P1 = Ps[1]
+
+P = nearest(Ps, Q)
+A = leftmost(Ps)
+B = rightmost(Ps)
+C = topmost(Ps)
+D = bottommost(Ps)
 ```
 
 Supported pairs are line-like curves with line-like curves, line-like
 curves with circles, and circles with circles. Coincident or overlapping
 inputs are errors because they have infinitely many intersections.
+Point selectors require a non-empty `List[Point]`.
 
 ## Curves
 
