@@ -72,6 +72,22 @@ def test_circle_through_rejects_duplicate_points():
         raise AssertionError("expected GeomValueError")
 
 
+def test_curve_constructors_reject_negative_radius():
+    try:
+        env_for("c = Circle(pt(0,0), -1)")
+    except GeomValueError as exc:
+        assert "Radius" in str(exc)
+    else:
+        raise AssertionError("expected GeomValueError")
+
+    try:
+        env_for("a = Arc(pt(0,0), -1, 0, pi)")
+    except GeomValueError as exc:
+        assert "Radius" in str(exc)
+    else:
+        raise AssertionError("expected GeomValueError")
+
+
 def test_intersect_returns_single_point():
     env = env_for("""
 L1 = line_through(pt(0, 0), pt(2, 0))

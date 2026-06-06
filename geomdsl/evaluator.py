@@ -264,7 +264,7 @@ class Evaluator:
             return Ray(require_point(args[0], expr), require_vector(args[1], expr))
         if name == "Circle":
             require_len(name, args, 2, expr)
-            return Circle(require_point(args[0], expr), require_number(args[1], expr))
+            return Circle(require_point(args[0], expr), require_radius(args[1], expr))
         if name == "circle_through":
             c, p = require_points(name, args, expr)
             r = distance_between(c, p)
@@ -280,7 +280,7 @@ class Evaluator:
             return Circle(center, r)
         if name == "Arc":
             require_len(name, args, 4, expr)
-            return Arc(require_point(args[0], expr), require_number(args[1], expr), require_number(args[2], expr), require_number(args[3], expr))
+            return Arc(require_point(args[0], expr), require_radius(args[1], expr), require_number(args[2], expr), require_number(args[3], expr))
         if name == "intersections":
             require_len(name, args, 2, expr)
             return curve_intersections(args[0], args[1], expr)
@@ -533,6 +533,13 @@ def require_number(value: Any, expr: Expr) -> float:
     if not is_number(value):
         raise GeomTypeError(f"Expected Number, got {type_name(value)}.", expr.span.line, expr.span.column)
     return float(value)
+
+
+def require_radius(value: Any, expr: Expr) -> float:
+    radius = require_number(value, expr)
+    if radius < 0:
+        raise GeomValueError("Radius must be nonnegative.", expr.span.line, expr.span.column)
+    return radius
 
 
 def require_point(value: Any, expr: Expr) -> Point:
