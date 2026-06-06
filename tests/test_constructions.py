@@ -154,3 +154,31 @@ P = topmost(intersections(c1, c2))
         assert "at least one point" in str(exc)
     else:
         raise AssertionError("expected GeomValueError")
+
+
+def test_list_index_rejects_fractional_index():
+    try:
+        env_for("""
+c = Circle(pt(0, 0), 1)
+L = Line(pt(0, 0), vec(1, 0))
+Ps = intersections(c, L)
+P = Ps[0.5]
+""")
+    except GeomTypeError as exc:
+        assert "integer" in str(exc)
+    else:
+        raise AssertionError("expected GeomTypeError")
+
+
+def test_list_index_rejects_out_of_bounds_index():
+    try:
+        env_for("""
+c = Circle(pt(0, 0), 1)
+L = Line(pt(0, 0), vec(1, 0))
+Ps = intersections(c, L)
+P = Ps[2]
+""")
+    except GeomValueError as exc:
+        assert "out of bounds" in str(exc)
+    else:
+        raise AssertionError("expected GeomValueError")

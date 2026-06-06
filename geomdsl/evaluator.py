@@ -111,9 +111,14 @@ class Evaluator:
         if isinstance(expr, IndexExpr):
             target = self._eval_expr(expr.target)
             index = self._eval_expr(expr.index)
-            if not isinstance(target, list) or not is_number(index):
-                raise GeomTypeError("Indexing expects List and Number index.", expr.span.line, expr.span.column)
-            return target[int(index)]
+            if not isinstance(target, list):
+                raise GeomTypeError("Indexing expects List target.", expr.span.line, expr.span.column)
+            if not is_number(index) or not float(index).is_integer():
+                raise GeomTypeError("List index expects integer Number.", expr.span.line, expr.span.column)
+            i = int(index)
+            if i < 0 or i >= len(target):
+                raise GeomValueError("List index is out of bounds.", expr.span.line, expr.span.column)
+            return target[i]
         raise GeomValueError(f"Unsupported expression {expr.__class__.__name__}.", expr.span.line, expr.span.column)
 
     def eval_binary(self, expr: BinaryExpr) -> Any:
