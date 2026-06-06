@@ -54,6 +54,7 @@ def render_scene(scene: Scene, *, output: str | None = None, fmt: str | None = N
     path = Path(output)
     final_fmt = fmt or scene.export.format or path.suffix.lstrip(".") or None
     fig.savefig(path, format=final_fmt, dpi=dpi, transparent=scene.export.transparent, bbox_inches="tight")
+    plt.close(fig)
     return str(path)
 
 

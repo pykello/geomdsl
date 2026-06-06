@@ -28,3 +28,13 @@ def test_render_exports_svg(tmp_path):
 def test_render_uses_export_dpi_when_not_overridden():
     fig = render("export(dpi=240)\ndraw marker(pt(0,0))")
     assert fig.dpi == 240
+
+
+def test_render_output_closes_figure(tmp_path):
+    from matplotlib import pyplot as plt
+
+    plt.close("all")
+    out = tmp_path / "closed.svg"
+    render("draw marker(pt(0,0))", output=str(out))
+    assert out.exists()
+    assert plt.get_fignums() == []
