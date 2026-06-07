@@ -1,4 +1,8 @@
-scene(min=(-0.7,-0.4), max=(3.5,3.25), size=(6.8,5.2), grid=false, axes=false)
+scene(
+  min=(-0.7,-0.4), max=(3.5,3.25), size=(6.8,5.2),
+  grid=false, axes=false,
+  frame=false, ticks=false, tick_labels=false
+)
 
 defaults {
   curve: {color: black, weight: 1.6, samples: 16, z: 10}
@@ -11,13 +15,17 @@ style front_fill = {color: "#8ecae6", opacity: 0.62, z: 3}
 style edge = {color: "#1f2933", weight: 1.8, z: 10}
 style hidden = {color: "#7a8691", weight: 1.1, pattern: dashed, z: 9}
 
-# A hand-projected cube in 2D.
+# A hand-projected cube in 2D. The three edge vectors define the view,
+# so the eight cube vertices can be read as A plus combinations of
+# right/up/depth instead of unrelated screen coordinates.
 A = pt(0, 0)
-B = pt(2.2, 0.25)
-D = pt(-0.25, 1.85)
-C = pt(1.95, 2.10)
-
+right = vec(2.2, 0.25)
+up = vec(-0.25, 1.85)
 depth = vec(0.85, 0.62)
+
+B = A + right
+D = A + up
+C = A + right + up
 A2 = A + depth
 B2 = B + depth
 C2 = C + depth
@@ -34,16 +42,17 @@ draw fill(front) @ front_fill
 
 draw front @ edge
 
-draw LineSegment(B, B2) @ edge
-draw LineSegment(C, C2) @ edge
-draw LineSegment(D, D2) @ edge
-
-draw LineSegment(B2, C2) @ edge
-draw LineSegment(C2, D2) @ edge
+draw group(
+  LineSegment(B, B2),
+  LineSegment(C, C2),
+  LineSegment(D, D2),
+  LineSegment(B2, C2),
+  LineSegment(C2, D2)
+) @ edge
 
 # A few hidden/back edges give the projection context without dominating.
-draw LineSegment(A, A2) @ hidden
-draw LineSegment(A2, B2) @ hidden
-draw LineSegment(A2, D2) @ hidden
-
-draw label(pt(-0.48, 3.02), "filled projected cube") @ {anchor: left, font_size: 14}
+draw group(
+  LineSegment(A, A2),
+  LineSegment(A2, B2),
+  LineSegment(A2, D2)
+) @ hidden

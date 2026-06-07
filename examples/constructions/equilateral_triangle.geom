@@ -1,4 +1,8 @@
-scene(min=(-0.7,-0.55), max=(2.7,2.15), size=(6.4,4.8), grid=false, axes=false)
+scene(
+  min=(-0.7,-0.55), max=(2.7,2.15), size=(6.4,4.8),
+  grid=false, axes=false,
+  frame=false, ticks=false, tick_labels=false
+)
 
 include "../common/construction_styles.geom"
 
@@ -41,5 +45,3 @@ draw marker(C)
 draw label(A, "$A$") @ {offset: vec(-0.12, -0.15)}
 draw label(B, "$B$") @ {offset: vec(0.12, -0.15)}
 draw label(C, "$C$") @ {offset: vec(0, 0.16)}
-
-draw label(pt(-0.52, -0.38), "equilateral triangle by two circles") @ {anchor: left, font_size: 14}

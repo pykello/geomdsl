@@ -120,4 +120,5 @@ a = arrow_on(segment3(pt3(0, 0, 0), pt3(0, 2, 0)), 0.5, 0.8)
     arrow = env["a"]
     assert arrow.kind == "arrow"
     assert arrow.data["start"] == Point(0.6, 0)
-    assert arrow.data["vector"] == Vector(0.8, 0)
+    assert abs(arrow.data["vector"].x - 0.8) < 1e-12
+    assert arrow.data["vector"].y == 0

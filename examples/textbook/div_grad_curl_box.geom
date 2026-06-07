@@ -21,12 +21,15 @@ defaults {
 style hidden = {color: "#202020", weight: 1.35, pattern: dashed, z: 4}
 
 O = pt3(0, 0, 0)
+axis_x = pt3(1.75,0,0)
+axis_y = pt3(0,4.35,0)
+axis_z = pt3(0,0,2.85)
 
 # Coordinate axes in projected 3D.
 draw project(segments3(
-  O, pt3(1.75,0,0),
-  O, pt3(0,4.35,0),
-  O, pt3(0,0,2.85)
+  O, axis_x,
+  O, axis_y,
+  O, axis_z
 ))
 
 draw group(
@@ -47,15 +50,17 @@ top_front_left = box_base + box_x + box_z
 top_front_right = top_front_left + box_y
 top_back_right = box_base + box_y + box_z
 top_back_left = box_base + box_z
+long_arrow = 0.35
+short_arrow = 0.30
 
 draw project(box_hidden3(box)) @ hidden
 draw project(box_visible3(box, 0.25))
 
 # Counterclockwise circulation arrows, one centered on each top edge.
 draw group(
-  arrow_on(segment3(top_front_left, top_front_right), 0.42, 0.35),
-  arrow_on(segment3(top_front_right, top_back_right), 0.50, 0.30),
-  arrow_on(segment3(top_back_right, top_back_left), 0.50, 0.35),
+  arrow_on(segment3(top_front_left, top_front_right), 0.42, long_arrow),
+  arrow_on(segment3(top_front_right, top_back_right), 0.50, short_arrow),
+  arrow_on(segment3(top_back_right, top_back_left), 0.50, long_arrow),
   arrow_on(segment3(top_back_left, top_front_left), 0.38, 0.28),
   label(project(top_back_left + 0.47*box_x - 0.16*box_y + 0.09*box_z), "$\\Delta x$"),
   label(project(top_front_left + 0.36*box_y - 0.10*box_z), "$\\Delta y$")

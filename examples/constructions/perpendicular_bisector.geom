@@ -1,4 +1,8 @@
-scene(min=(-2.3,-2.05), max=(2.3,2.08), size=(6.2,5.0), grid=false, axes=false)
+scene(
+  min=(-2.3,-2.05), max=(2.3,2.08), size=(6.2,5.0),
+  grid=false, axes=false,
+  frame=false, ticks=false, tick_labels=false
+)
 
 include "../common/construction_styles.geom"
 
@@ -45,5 +49,3 @@ draw label(B, "$B$") @ {offset: vec(0.16, -0.12)}
 draw label(U, "$U$") @ {offset: vec(0.16, 0.1)}
 draw label(D, "$D$") @ {offset: vec(0.14, -0.18)}
 draw label(M, "$M$") @ {offset: vec(0.14, 0.14)}
-
-draw label(pt(-2.05, -1.82), "perpendicular bisector") @ {anchor: left, font_size: 13}

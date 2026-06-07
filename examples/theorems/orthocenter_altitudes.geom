@@ -1,4 +1,8 @@
-scene(min=(-2.45,-1.35), max=(2.6,2.2), size=(7.0,4.9), grid=false, axes=false)
+scene(
+  min=(-2.45,-1.35), max=(2.6,2.2), size=(7.0,4.9),
+  grid=false, axes=false,
+  frame=false, ticks=false, tick_labels=false
+)
 
 include "../common/construction_styles.geom"
 
@@ -47,5 +51,3 @@ draw label(A, "$A$") @ {offset: vec(-0.16, -0.14)}
 draw label(B, "$B$") @ {offset: vec(0.15, -0.14)}
 draw label(C, "$C$") @ {offset: vec(0.08, 0.16)}
 draw label(H, "$H$") @ {offset: vec(0.14, 0.12)}
-
-draw label(pt(-2.25, -1.12), "orthocenter theorem") @ {anchor: left, font_size: 13}

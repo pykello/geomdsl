@@ -1,5 +1,10 @@
-scene(min=(-1,-1), max=(4,3), grid=true)
+scene(
+  min=(-1,-1), max=(4,3),
+  grid=true, axes=true,
+  frame=false, ticks=false, tick_labels=false
+)
 
+# Smallest complete drawing: a segment and its labeled endpoints.
 A = pt(0, 0)
 B = pt(3, 1)
 

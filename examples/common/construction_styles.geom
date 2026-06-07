@@ -1,3 +1,6 @@
+# Shared visual language for straightedge-and-compass examples:
+# dashed gray circles are construction traces, blue dashed lines are
+# auxiliary construction lines, and dark solid curves are final objects.
 defaults {
   curve: {color: "#1f2933", weight: 1.6, z: 10}
   marker: {color: "#111827", size: 22, z: 20}
