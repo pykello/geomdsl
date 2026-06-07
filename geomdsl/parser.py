@@ -18,6 +18,7 @@ from .ast import (
     NumberExpr,
     ParamRange,
     Program,
+    ProjectionStmt,
     SceneStmt,
     SourceSpan,
     Statement,
@@ -193,6 +194,8 @@ class Parser:
             return IncludeStmt(token.span, path.value)
         if token.value == "scene":
             return SceneStmt(token.span, self.named_call_args())
+        if token.value == "projection":
+            return ProjectionStmt(token.span, self.named_call_args())
         if token.value == "export":
             return ExportStmt(token.span, self.named_call_args())
         if token.value == "defaults":

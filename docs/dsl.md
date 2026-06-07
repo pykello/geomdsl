@@ -220,6 +220,44 @@ curves with circles, and circles with circles. Coincident or overlapping
 inputs are errors because they have infinitely many intersections.
 Point selectors require a non-empty `List[Point]`.
 
+## Projection helpers
+
+Projection is a lightweight way to draw textbook-style 3D diagrams
+through the existing 2D renderer.
+
+```text
+projection(
+  origin=pt(0, 0),
+  x=vec(-0.75, -0.50),
+  y=vec(1, 0),
+  z=vec(0, 1),
+  scale=1
+)
+
+A = pt3(0, 0, 0)
+B = pt3(0, 2, 0)
+C = pt3(0, 2, 1)
+D = pt3(0, 0, 1)
+
+face = project(quad3(A, B, C, D))
+edge = project(segment3(A, B))
+edges = project(segments3(A, B, A, D, B, C))
+box = box3(A, vec3(1, 2, 1))
+
+draw face
+draw edges
+draw project(box_hidden3(box)) @ {pattern: dashed}
+draw project(box_visible3(box))
+draw group(marker(project(pt3(0, 1, 1))), label(project(C), "$C$"))
+```
+
+The default projection has `z` upward, `y` to the right, and `x`
+down-left. `project(...)` maps `Point3`, `Vector3`, `LineSegment3`,
+`segment3(...)`, `segments3(...)`, `polygon3(...)`, and `quad3(...)` to
+ordinary 2D DSL values. `box3(...)` plus `box_hidden3(...)` and
+`box_visible3(...)` provide a compact projected cuboid wireframe for
+volume-element diagrams.
+
 ## Curves
 
 ```text
@@ -259,9 +297,15 @@ Current calculus helpers use numerical differentiation.
 marker(P)
 arrow(P, v)
 arrow_between(A, B)
+arrow_on(segment, at, length)
 label(P, "$P$")
 point_label(P, "$P$")
 ```
+
+`arrow_on(segment, at, length)` draws a centered arrow on a
+`LineSegment` at parameter `at`, where `0` is the start and `1` is the
+end. It also accepts `LineSegment3`/`segment3(...)`; those are projected
+first, so `length` is measured in the final 2D scene.
 
 `point_label(P, text)` is a label with a small default offset and
 bottom-left anchor for common point annotations. Inline style can still

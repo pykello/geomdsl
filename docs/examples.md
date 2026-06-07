@@ -112,3 +112,23 @@ Try it:
 ```bash
 python3 -m geomdsl.cli examples/textbook/eigenvectors_invariant_directions.geom -o /tmp/eigenvectors.svg
 ```
+
+### Projected divergence box
+
+File:
+
+```text
+examples/textbook/div_grad_curl_box.geom
+```
+
+Reference topic:
+
+```text
+Vector-calculus divergence, gradient, and curl notes
+```
+
+Try it:
+
+```bash
+python3 -m geomdsl.cli examples/textbook/div_grad_curl_box.geom -o /tmp/div_grad_curl_box.svg
+```

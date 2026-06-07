@@ -18,6 +18,7 @@ from .ast import (
     NumberExpr,
     ParamRange,
     Program,
+    ProjectionStmt,
     SceneStmt,
     StringExpr,
     StyleExpr,
@@ -29,7 +30,7 @@ from .ast import (
 )
 from .errors import GeomNameError, GeomTypeError, GeomValueError
 from .loader import load_program
-from .values import Arc, Circle, Curve, Drawable, ExportConfig, Line, LineSegment, ParametricCurve, Point, PolygonCurve, Ray, Scene, Style, Vector
+from .values import Arc, Box3, Circle, Curve, Drawable, ExportConfig, Line, LineSegment, LineSegment3, ParametricCurve, Point, Point3, Polygon3, PolygonCurve, Projection, Ray, Scene, Style, Vector, Vector3
 
 
 _IDENTIFIER_STRINGS = {
@@ -57,6 +58,9 @@ class Evaluator:
             return
         if isinstance(stmt, SceneStmt):
             self.apply_scene(stmt)
+            return
+        if isinstance(stmt, ProjectionStmt):
+            self.apply_projection(stmt)
             return
         if isinstance(stmt, ExportStmt):
             self.apply_export(stmt)
@@ -103,6 +107,8 @@ class Evaluator:
                 return -value
             if expr.op == "-" and isinstance(value, Vector):
                 return Vector(-value.x, -value.y)
+            if expr.op == "-" and isinstance(value, Vector3):
+                return Vector3(-value.x, -value.y, -value.z)
             raise GeomTypeError(f"Cannot apply unary {expr.op} to {type_name(value)}.", expr.span.line, expr.span.column)
         if isinstance(expr, BinaryExpr):
             return self.eval_binary(expr)
@@ -145,13 +151,27 @@ class Evaluator:
                 return Point(left.x - right.x, left.y - right.y)
         if isinstance(left, Point) and isinstance(right, Point) and op == "-":
             return Vector(left.x - right.x, left.y - right.y)
+        if isinstance(left, Point3) and isinstance(right, Vector3):
+            if op == "+":
+                return Point3(left.x + right.x, left.y + right.y, left.z + right.z)
+            if op == "-":
+                return Point3(left.x - right.x, left.y - right.y, left.z - right.z)
+        if isinstance(left, Point3) and isinstance(right, Point3) and op == "-":
+            return Vector3(left.x - right.x, left.y - right.y, left.z - right.z)
         if isinstance(left, Vector) and isinstance(right, Vector):
             if op == "+":
                 return Vector(left.x + right.x, left.y + right.y)
             if op == "-":
                 return Vector(left.x - right.x, left.y - right.y)
+        if isinstance(left, Vector3) and isinstance(right, Vector3):
+            if op == "+":
+                return Vector3(left.x + right.x, left.y + right.y, left.z + right.z)
+            if op == "-":
+                return Vector3(left.x - right.x, left.y - right.y, left.z - right.z)
         if is_number(left) and isinstance(right, Vector) and op == "*":
             return Vector(left * right.x, left * right.y)
+        if is_number(left) and isinstance(right, Vector3) and op == "*":
+            return Vector3(left * right.x, left * right.y, left * right.z)
         if isinstance(left, Vector) and is_number(right):
             if op == "*":
                 return Vector(left.x * right, left.y * right)
@@ -159,6 +179,13 @@ class Evaluator:
                 if right == 0:
                     raise GeomValueError("Division by zero is undefined.", expr.span.line, expr.span.column)
                 return Vector(left.x / right, left.y / right)
+        if isinstance(left, Vector3) and is_number(right):
+            if op == "*":
+                return Vector3(left.x * right, left.y * right, left.z * right)
+            if op == "/":
+                if right == 0:
+                    raise GeomValueError("Division by zero is undefined.", expr.span.line, expr.span.column)
+                return Vector3(left.x / right, left.y / right, left.z / right)
         raise GeomTypeError(f"Cannot {op_name(op)} {type_name(left)} and {type_name(right)}.", expr.span.line, expr.span.column)
 
     def eval_call(self, expr: CallExpr) -> Any:
@@ -193,6 +220,14 @@ class Evaluator:
         if name == "vec":
             require_len(name, args, 2, expr)
             return Vector(require_number(args[0], expr), require_number(args[1], expr))
+        if name == "pt3":
+            require_len(name, args, 3, expr)
+            return Point3(require_number(args[0], expr), require_number(args[1], expr), require_number(args[2], expr))
+        if name == "vec3":
+            require_len(name, args, 3, expr)
+            return Vector3(require_number(args[0], expr), require_number(args[1], expr), require_number(args[2], expr))
+        if name == "group":
+            return flatten_values(args)
         if name in {"sin", "cos", "tan", "sqrt", "exp", "log", "abs"}:
             require_len(name, args, 1, expr)
             value = require_number(args[0], expr)
@@ -273,6 +308,24 @@ class Evaluator:
         if name == "LineSegment":
             a, b = require_points(name, args, expr)
             return LineSegment(a, b)
+        if name in {"LineSegment3", "segment3"}:
+            a, b = require_points3(name, args, expr)
+            return LineSegment3(a, b)
+        if name == "segments3":
+            if len(args) < 2 or len(args) % 2 != 0:
+                raise GeomTypeError("segments3(Point3, Point3, ...) expected point pairs.", expr.span.line, expr.span.column)
+            return [LineSegment3(require_point3(args[i], expr), require_point3(args[i + 1], expr)) for i in range(0, len(args), 2)]
+        if name == "box3":
+            require_len(name, args, 2, expr)
+            return Box3(require_point3(args[0], expr), require_vector3(args[1], expr))
+        if name == "box_hidden3":
+            require_len(name, args, 1, expr)
+            return box_hidden3(require_box3(args[0], expr))
+        if name == "box_visible3":
+            if len(args) not in {1, 2}:
+                raise GeomTypeError(f"box_visible3 expected 1 or 2 arguments, got {len(args)}.", expr.span.line, expr.span.column)
+            z_floor = require_number(args[1], expr) if len(args) == 2 else 0.0
+            return box_visible3(require_box3(args[0], expr), z_floor)
         if name == "polygon":
             if len(args) < 3:
                 raise GeomTypeError("polygon(Point, Point, Point, ...) expected at least 3 points.", expr.span.line, expr.span.column)
@@ -280,6 +333,13 @@ class Evaluator:
         if name == "quad":
             require_len(name, args, 4, expr)
             return PolygonCurve([require_point(arg, expr) for arg in args])
+        if name == "polygon3":
+            if len(args) < 3:
+                raise GeomTypeError("polygon3(Point3, Point3, Point3, ...) expected at least 3 points.", expr.span.line, expr.span.column)
+            return Polygon3([require_point3(arg, expr) for arg in args])
+        if name == "quad3":
+            require_len(name, args, 4, expr)
+            return Polygon3([require_point3(arg, expr) for arg in args])
         if name == "Line":
             require_len(name, args, 2, expr)
             return Line(require_point(args[0], expr), require_vector(args[1], expr))
@@ -335,6 +395,15 @@ class Evaluator:
             require_len(name, args, 1, expr)
             points = require_point_list(name, args[0], expr)
             return min(points, key=lambda p: (p.y, p.x))
+        if name == "Projection":
+            require_len(name, args, 5, expr)
+            return Projection(require_point(args[0], expr), require_vector(args[1], expr), require_vector(args[2], expr), require_vector(args[3], expr), require_number(args[4], expr))
+        if name == "project":
+            if len(args) == 1:
+                return project_value(args[0], self.scene.projection, expr)
+            if len(args) == 2:
+                return project_value(args[0], require_projection(args[1], expr), expr)
+            raise GeomTypeError(f"project expected 1 or 2 arguments, got {len(args)}.", expr.span.line, expr.span.column)
         if name == "curve_at":
             require_len(name, args, 2, expr)
             return curve_point(require_curve(args[0], expr), require_number(args[1], expr), self, expr)
@@ -376,6 +445,33 @@ class Evaluator:
         if name == "arrow_between":
             a, b = require_points(name, args, expr)
             return Drawable("arrow", {"start": a, "vector": Vector(b.x - a.x, b.y - a.y)})
+        if name == "arrow_on":
+            if len(args) not in {1, 2, 3}:
+                raise GeomTypeError(f"arrow_on expected 1 to 3 arguments, got {len(args)}.", expr.span.line, expr.span.column)
+            segment = args[0]
+            if isinstance(segment, LineSegment3):
+                segment = project_value(segment, self.scene.projection, expr)
+            if not isinstance(segment, LineSegment):
+                raise GeomTypeError(f"arrow_on expects LineSegment or LineSegment3, got {type_name(segment)}.", expr.span.line, expr.span.column)
+            at = require_number(args[1], expr) if len(args) >= 2 else 0.5
+            length = require_number(args[2], expr) if len(args) == 3 else 0.25
+            if at < 0 or at > 1:
+                raise GeomValueError("arrow_on at must be between 0 and 1.", expr.span.line, expr.span.column)
+            if length <= 0:
+                raise GeomValueError("arrow_on length must be positive.", expr.span.line, expr.span.column)
+            dx = segment.b.x - segment.a.x
+            dy = segment.b.y - segment.a.y
+            distance = math.sqrt(dx * dx + dy * dy)
+            if distance < 1e-12:
+                raise GeomValueError("arrow_on requires a nonzero segment.", expr.span.line, expr.span.column)
+            half_t = 0.5 * length / distance
+            if at - half_t < -1e-12 or at + half_t > 1 + 1e-12:
+                raise GeomValueError("arrow_on length must fit inside the segment at the requested parameter.", expr.span.line, expr.span.column)
+            start_t = max(0.0, at - half_t)
+            end_t = min(1.0, at + half_t)
+            start = segment.point_at(start_t)
+            end = segment.point_at(end_t)
+            return Drawable("arrow", {"start": start, "vector": Vector(end.x - start.x, end.y - start.y)})
         if name == "label":
             require_len(name, args, 2, expr)
             if not isinstance(args[1], str):
@@ -398,14 +494,21 @@ class Evaluator:
     def eval_draw(self, stmt: DrawStmt) -> None:
         value = self.eval_expr(stmt.expr)
         style = self.eval_style(stmt.style) if stmt.style else None
+        for drawable in self.drawables_for_value(value, stmt):
+            drawable.style = self.scene.default_style_for(drawable.kind).merged(drawable.style).merged(style)
+            self.scene.append(drawable)
+
+    def drawables_for_value(self, value: Any, stmt: DrawStmt) -> list[Drawable]:
+        if isinstance(value, list):
+            drawables: list[Drawable] = []
+            for item in value:
+                drawables.extend(self.drawables_for_value(item, stmt))
+            return drawables
         if isinstance(value, Curve):
-            drawable = Drawable("curve", {"curve": value})
-        elif isinstance(value, Drawable):
-            drawable = value
-        else:
-            raise GeomTypeError(f"draw expected Curve or Drawable, got {type_name(value)}.", stmt.span.line, stmt.span.column)
-        drawable.style = self.scene.default_style_for(drawable.kind).merged(drawable.style).merged(style)
-        self.scene.append(drawable)
+            return [Drawable("curve", {"curve": value})]
+        if isinstance(value, Drawable):
+            return [value]
+        raise GeomTypeError(f"draw expected Curve or Drawable, got {type_name(value)}.", stmt.span.line, stmt.span.column)
 
     def eval_style(self, style_expr: StyleExpr | None) -> Style:
         if style_expr is None:
@@ -457,6 +560,28 @@ class Evaluator:
                 setattr(self.scene, key, self.eval_style_value_or_ref(expr))
             else:
                 raise GeomValueError(f"Unknown scene field '{key}'.", expr.span.line, expr.span.column)
+
+    def apply_projection(self, stmt: ProjectionStmt) -> None:
+        current = self.scene.projection
+        origin = current.origin
+        x_axis = current.x
+        y_axis = current.y
+        z_axis = current.z
+        scale = current.scale
+        for key, expr in stmt.args.items():
+            if key == "origin":
+                origin = require_point(self.eval_expr(expr), expr)
+            elif key == "x":
+                x_axis = require_vector(self.eval_expr(expr), expr)
+            elif key == "y":
+                y_axis = require_vector(self.eval_expr(expr), expr)
+            elif key == "z":
+                z_axis = require_vector(self.eval_expr(expr), expr)
+            elif key == "scale":
+                scale = self.eval_number(expr)
+            else:
+                raise GeomValueError(f"Unknown projection field '{key}'.", expr.span.line, expr.span.column)
+        self.scene.projection = Projection(origin, x_axis, y_axis, z_axis, scale)
 
     def apply_export(self, stmt: ExportStmt) -> None:
         data = self.scene.export
@@ -522,6 +647,16 @@ def unit_vector(v: Vector, expr: CallExpr) -> Vector:
 
 def distance_between(a: Point, b: Point) -> float:
     return math.hypot(b.x - a.x, b.y - a.y)
+
+
+def flatten_values(values: list[Any]) -> list[Any]:
+    flattened: list[Any] = []
+    for value in values:
+        if isinstance(value, list):
+            flattened.extend(flatten_values(value))
+        else:
+            flattened.append(value)
+    return flattened
 
 
 def safe_power(left: float, right: float, expr: Expr) -> float:
@@ -592,6 +727,30 @@ def require_vector(value: Any, expr: Expr) -> Vector:
     return value
 
 
+def require_point3(value: Any, expr: Expr) -> Point3:
+    if not isinstance(value, Point3):
+        raise GeomTypeError(f"Expected Point3, got {type_name(value)}.", expr.span.line, expr.span.column)
+    return value
+
+
+def require_vector3(value: Any, expr: Expr) -> Vector3:
+    if not isinstance(value, Vector3):
+        raise GeomTypeError(f"Expected Vector3, got {type_name(value)}.", expr.span.line, expr.span.column)
+    return value
+
+
+def require_projection(value: Any, expr: Expr) -> Projection:
+    if not isinstance(value, Projection):
+        raise GeomTypeError(f"Expected Projection, got {type_name(value)}.", expr.span.line, expr.span.column)
+    return value
+
+
+def require_box3(value: Any, expr: Expr) -> Box3:
+    if not isinstance(value, Box3):
+        raise GeomTypeError(f"Expected Box3, got {type_name(value)}.", expr.span.line, expr.span.column)
+    return value
+
+
 def require_curve(value: Any, expr: Expr) -> Curve:
     if not isinstance(value, Curve):
         raise GeomTypeError(f"Expected Curve, got {type_name(value)}.", expr.span.line, expr.span.column)
@@ -637,6 +796,67 @@ def line_like_direction(value: Any, expr: Expr) -> Vector:
     if isinstance(value, LineSegment):
         return nonzero_vector(Vector(value.b.x - value.a.x, value.b.y - value.a.y), expr)
     raise GeomTypeError(f"Expected line-like Curve, got {type_name(value)}.", expr.span.line, expr.span.column)
+
+
+def project_point3(p: Point3, projection: Projection) -> Point:
+    x = projection.origin.x + projection.scale * (p.x * projection.x.x + p.y * projection.y.x + p.z * projection.z.x)
+    y = projection.origin.y + projection.scale * (p.x * projection.x.y + p.y * projection.y.y + p.z * projection.z.y)
+    return Point(x, y)
+
+
+def project_vector3(v: Vector3, projection: Projection) -> Vector:
+    x = projection.scale * (v.x * projection.x.x + v.y * projection.y.x + v.z * projection.z.x)
+    y = projection.scale * (v.x * projection.x.y + v.y * projection.y.y + v.z * projection.z.y)
+    return Vector(x, y)
+
+
+def project_value(value: Any, projection: Projection, expr: Expr) -> Any:
+    if isinstance(value, Point3):
+        return project_point3(value, projection)
+    if isinstance(value, Vector3):
+        return project_vector3(value, projection)
+    if isinstance(value, LineSegment3):
+        return LineSegment(project_point3(value.a, projection), project_point3(value.b, projection))
+    if isinstance(value, Polygon3):
+        return PolygonCurve([project_point3(p, projection) for p in value.points])
+    if isinstance(value, list):
+        return [project_value(item, projection, expr) for item in value]
+    raise GeomTypeError(f"Cannot project {type_name(value)}.", expr.span.line, expr.span.column)
+
+
+def box_corner(box: Box3, x: float, y: float, z: float) -> Point3:
+    return Point3(
+        box.origin.x + x * box.size.x,
+        box.origin.y + y * box.size.y,
+        box.origin.z + z * box.size.z,
+    )
+
+
+def box_hidden3(box: Box3) -> list[Any]:
+    a = box_corner(box, 0, 0, 0)
+    b = box_corner(box, 0, 1, 0)
+    c = box_corner(box, 0, 1, 1)
+    d = box_corner(box, 0, 0, 1)
+    e = box_corner(box, 1, 0, 0)
+    f = box_corner(box, 1, 1, 0)
+    g = box_corner(box, 1, 1, 1)
+    h = box_corner(box, 1, 0, 1)
+    return [
+        Polygon3([e, f, b, a]),
+        LineSegment3(a, d),
+        LineSegment3(b, c),
+        LineSegment3(e, h),
+        LineSegment3(f, g),
+    ]
+
+
+def box_visible3(box: Box3, z_floor: float) -> list[Any]:
+    c = box_corner(box, 0, 1, 1)
+    d = box_corner(box, 0, 0, 1)
+    g = box_corner(box, 1, 1, 1)
+    h = box_corner(box, 1, 0, 1)
+    drop = box_corner(box, 1, 1, z_floor)
+    return [Polygon3([h, g, c, d]), LineSegment3(g, drop)]
 
 
 def curve_intersections(a: Any, b: Any, expr: Expr) -> list[Point]:
@@ -759,6 +979,11 @@ def unique_points(points: list[Point]) -> list[Point]:
 def require_points(name: str, args: list[Any], expr: CallExpr) -> tuple[Point, Point]:
     require_len(name, args, 2, expr)
     return require_point(args[0], expr), require_point(args[1], expr)
+
+
+def require_points3(name: str, args: list[Any], expr: CallExpr) -> tuple[Point3, Point3]:
+    require_len(name, args, 2, expr)
+    return require_point3(args[0], expr), require_point3(args[1], expr)
 
 
 def require_vectors(name: str, args: list[Any], expr: CallExpr) -> tuple[Vector, Vector]:

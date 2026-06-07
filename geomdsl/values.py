@@ -16,6 +16,46 @@ class Vector:
     y: float
 
 
+@dataclass(frozen=True)
+class Point3:
+    x: float
+    y: float
+    z: float
+
+
+@dataclass(frozen=True)
+class Vector3:
+    x: float
+    y: float
+    z: float
+
+
+@dataclass(frozen=True)
+class Projection:
+    origin: Point = field(default_factory=lambda: Point(0.0, 0.0))
+    x: Vector = field(default_factory=lambda: Vector(-0.75, -0.50))
+    y: Vector = field(default_factory=lambda: Vector(1.0, 0.0))
+    z: Vector = field(default_factory=lambda: Vector(0.0, 1.0))
+    scale: float = 1.0
+
+
+@dataclass
+class LineSegment3:
+    a: Point3
+    b: Point3
+
+
+@dataclass
+class Polygon3:
+    points: list[Point3]
+
+
+@dataclass(frozen=True)
+class Box3:
+    origin: Point3
+    size: Vector3
+
+
 @dataclass
 class Style:
     fields: dict[str, Any] = field(default_factory=dict)
@@ -80,6 +120,7 @@ class Scene:
     aspect: str = "equal"
     background: str = "white"
     padding: float = 0.0
+    projection: Projection = field(default_factory=Projection)
     export: ExportConfig = field(default_factory=ExportConfig)
     defaults: dict[str, Style] = field(default_factory=dict)
     drawables: list[Drawable] = field(default_factory=list)

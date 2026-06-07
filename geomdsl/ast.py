@@ -41,6 +41,11 @@ class SceneStmt(Statement):
 
 
 @dataclass
+class ProjectionStmt(Statement):
+    args: dict[str, Expr]
+
+
+@dataclass
 class ExportStmt(Statement):
     args: dict[str, Expr]
 
