@@ -62,6 +62,13 @@ class StyleStmt(Statement):
 
 
 @dataclass
+class FunctionDef(Statement):
+    name: str
+    params: list[str]
+    body: Expr
+
+
+@dataclass
 class Assignment(Statement):
     name: str
     expr: Expr

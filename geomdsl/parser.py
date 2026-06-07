@@ -12,6 +12,7 @@ from .ast import (
     DrawStmt,
     ExportStmt,
     Expr,
+    FunctionDef,
     IncludeStmt,
     IndexExpr,
     InlineStyle,
@@ -204,6 +205,11 @@ class Parser:
             name = self.expect("IDENT", "Expected style name.")
             self.expect("EQUAL", "Expected '=' after style name.")
             return StyleStmt(token.span, name.value, self.style_expr())
+        if token.value == "def":
+            name = self.expect("IDENT", "Expected function name after 'def'.")
+            params = self.function_params()
+            self.expect("EQUAL", "Expected '=' after function parameters.")
+            return FunctionDef(token.span, name.value, params, self.expr())
         if token.value == "draw":
             expr = self.expr()
             style = self.style_expr() if self.match("AT") else None
@@ -211,6 +217,26 @@ class Parser:
         name = token.value
         self.expect("EQUAL", "Expected '=' in assignment.")
         return Assignment(token.span, name, self.expr())
+
+    def function_params(self) -> list[str]:
+        self.expect("LPAREN", "Expected '(' after function name.")
+        params: list[str] = []
+        seen: set[str] = set()
+        if self.match("RPAREN"):
+            return params
+        while True:
+            name = self.expect("IDENT", "Expected function parameter name.")
+            if name.value in seen:
+                raise GeomParseError(f"Duplicate function parameter '{name.value}'.", name.line, name.column)
+            params.append(name.value)
+            seen.add(name.value)
+            if self.match("COMMA"):
+                if self.check("RPAREN"):
+                    tok = self.peek()
+                    raise GeomParseError("Expected function parameter after ','.", tok.line, tok.column)
+                continue
+            self.expect("RPAREN", "Expected ')' after function parameters.")
+            return params
 
     def named_call_args(self) -> dict[str, Expr]:
         self.expect("LPAREN", "Expected '('.")

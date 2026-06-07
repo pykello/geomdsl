@@ -127,6 +127,33 @@ unary -
 + -
 ```
 
+## User functions
+
+Define reusable expression helpers with `def name(args...) = expr`.
+Functions return values; they do not draw by themselves.
+
+```text
+def edge(A, B) = LineSegment(A, B)
+def tri(A, B, C) = polygon(A, B, C)
+def labeled_point(P, text) = group(marker(P), label(P, text))
+
+A = pt(0, 0)
+B = pt(2, 0)
+C = pt(1, 1.5)
+
+draw fill(tri(A, B, C)) @ {color: "#8ecae6", opacity: 0.35}
+draw tri(A, B, C)
+draw labeled_point(A, "$A$")
+```
+
+Function arguments are positional. Parameters are local to the call,
+and the function body is evaluated against the current environment when
+called. This makes definitions useful in notebooks: a helper defined in
+one cell can use variables introduced or changed in later cells.
+
+Functions cannot redefine built-in names such as `pt`, `sin`, `Circle`,
+or `marker`.
+
 ## Scalar functions
 
 ```text

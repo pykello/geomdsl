@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 from typing import Any
 
 from . import ast as astmod
@@ -13,6 +14,7 @@ from .ast import (
     DrawStmt,
     ExportStmt,
     Expr,
+    FunctionDef,
     IndexExpr,
     InlineStyle,
     NumberExpr,
@@ -41,11 +43,31 @@ _IDENTIFIER_STRINGS = {
 }
 
 
+_BUILTIN_FUNCTIONS = {
+    "Arc", "Circle", "Line", "LineSegment", "LineSegment3", "ParametricCurve", "Projection", "Ray",
+    "abs", "arrow", "arrow_between", "arrow_on", "bottommost", "box3", "box_hidden3", "box_visible3",
+    "circle_through", "circle_with_diameter", "cos", "cross", "curve_at", "direction", "distance",
+    "dot", "exp", "fill", "graph", "group", "intersect", "intersections", "label", "leftmost",
+    "line_through", "log", "marker", "max", "midpoint", "min", "nearest", "norm", "normal_left",
+    "normal_line", "normal_right", "parallel", "perpendicular", "perpendicular_bisector", "point_label",
+    "polygon", "polygon3", "project", "pt", "pt3", "quad", "quad3", "rightmost", "rotate", "rotate90",
+    "secant", "segment3", "segments3", "sidelines", "sin", "speed", "sqrt", "tan", "tangent_line",
+    "topmost", "unit", "unit_tangent", "vec", "vec3", "velocity",
+}
+
+
+@dataclass
+class UserFunction:
+    params: list[str]
+    body: Expr
+
+
 class Evaluator:
     def __init__(self):
         self.scene = Scene()
         self.env: dict[str, Any] = {"pi": math.pi, "e": math.e}
         self.styles: dict[str, Style] = {}
+        self.functions: dict[str, UserFunction] = {}
 
     def eval_program(self, program: Program) -> Scene:
         for stmt in program.statements:
@@ -71,6 +93,11 @@ class Evaluator:
             return
         if isinstance(stmt, StyleStmt):
             self.styles[stmt.name] = self.eval_style(stmt.style)
+            return
+        if isinstance(stmt, FunctionDef):
+            if stmt.name in _BUILTIN_FUNCTIONS or stmt.name in self.env:
+                raise GeomValueError(f"Cannot redefine built-in name '{stmt.name}'.", stmt.span.line, stmt.span.column)
+            self.functions[stmt.name] = UserFunction(stmt.params, stmt.body)
             return
         if isinstance(stmt, DrawStmt):
             self.eval_draw(stmt)
@@ -205,6 +232,9 @@ class Evaluator:
             end = self.eval_number(pr.end)
             point_expr = CallExpr(expr.span, "pt", [VarExpr(pr.span, pr.name), expr.args[0]])
             return ParametricCurve(point_expr, pr.name, start, end, dict(self.env))
+        if name in self.functions:
+            args = [self.eval_param_arg(a) for a in expr.args]
+            return self.call_user_function(name, args, expr)
         args = [self.eval_param_arg(a) for a in expr.args]
         return self.call_builtin(name, args, expr)
 
@@ -212,6 +242,15 @@ class Evaluator:
         if isinstance(arg, ParamRange):
             raise GeomTypeError("Parameter ranges are only valid in ParametricCurve.", arg.span.line, arg.span.column)
         return self._eval_expr(arg)
+
+    def call_user_function(self, name: str, args: list[Any], expr: CallExpr) -> Any:
+        function = self.functions[name]
+        expected = len(function.params)
+        if len(args) != expected:
+            raise GeomTypeError(f"{name} expected {expected} arguments, got {len(args)}.", expr.span.line, expr.span.column)
+        env = dict(self.env)
+        env.update(zip(function.params, args))
+        return self.eval_expr(function.body, env)
 
     def call_builtin(self, name: str, args: list[Any], expr: CallExpr) -> Any:
         if name == "pt":
